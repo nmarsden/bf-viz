@@ -1,0 +1,30 @@
+Short Description: bf-viz is a brainfuck interpreter and visualizer built with Three.js 
+
+Ideas:
+- user can select a sample bf programs to run
+- user can type in their own bf program to run
+- the program being run is shown on a HUD with the current instruction highlighted
+- the memory is visualized as a list of numbers
+- the memory pointer is visualized as an arrow pointing to a number in memory
+- the output is shown as text somewhere in the 3D environment
+- possibly also show the output on the HUD
+- each instruction when run will effect the environment
+-- '+'
+-- '-'
+-- '>'
+-- '<'
+-- '['
+-- ']'
+-- '.'
+-- ','
+- also need to think about input. possibly a string input buffer can be specified when entering the program
+
+
+More ambitious idea of 'Game mode':
+- have a 'Game mode' where the player can interact with the 3D environment 
+- the user is set a goal to write a bf program, eg. a bf program which outputs 'HELLO WORLD' 
+- instead of typing in the code the user must interact with the environment
+- difficulty is increased by game mechanics such as:-
+   1) Output mechanic - to output a letter the user must shoot a number at a moving target
+
+
