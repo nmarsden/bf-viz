@@ -2,7 +2,7 @@ if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
 
 var settings = {
     fog: {
-        colour: "#000000",
+        colour: "#dedede",
         near: 450,
         far: 1400
     },
@@ -10,8 +10,12 @@ var settings = {
         colour: "#3d4269"
     },
     memory: {
-        colour: "#02d2df",
-        opacity: 0.5
+        cellColour: "#ffffff",
+        cellOpacity: 0.12,
+        textColour: "#d5de8d"
+    },
+    gun: {
+        colour: "#c07171"
     },
     scene: {
         rotation: {
@@ -19,7 +23,7 @@ var settings = {
         }
     },
     ambientLight: {
-        colour: "#404040"
+        colour: "#695b5b"
     },
     directionalLight: {
         colour: "#ffffff",
@@ -31,7 +35,7 @@ var settings = {
         }
     },
     pointLight: {
-        colour: "#0065ff",
+        colour: "#a08686",
         intensity: 1.5,
         distance: 0,
         position: {
@@ -53,9 +57,11 @@ var settings = {
         }
     },
     render: {
-        fog: true,
-        floor: true,
-        memory: true
+        fog: false,
+        floor: false,
+        memory: true,
+        gun: true,
+        bullet: true
     }
 };
 
@@ -82,6 +88,8 @@ var windowHalfY = window.innerHeight / 2;
 
 var y_diff = 0.1;
 
+var bulletObject = "plusText";
+
 init();
 animate();
 
@@ -101,7 +109,9 @@ function init() {
     fog = new THREE.Fog( settings.fog.colour, settings.fog.near, settings.fog.far );
 
     scene = new THREE.Scene();
-    scene.fog = fog;
+    if (settings.render.fog) {
+        scene.fog = fog;
+    }
 
     // LIGHTS
 
@@ -117,19 +127,24 @@ function init() {
 
     scene.add( ambientLight );
 
-    // MESHES
+    // FLOOR
 
     var floorMaterial = new THREE.MeshBasicMaterial( {
         color: settings.floor.colour, transparent: false
     } );
-    textMaterial = new THREE.MeshFaceMaterial( [
-        new THREE.MeshPhongMaterial( {
-            color: 0xffffff, shading: THREE.FlatShading } ), // front
-        new THREE.MeshPhongMaterial( {
-            color: 0xffffff, shading: THREE.SmoothShading } ) // side
-    ] );
+    var floor = createPlane(floorMaterial);
+    floor.visible = settings.render.floor;
+
+    // MEMORY
+
+    var frontTextMaterial = new THREE.MeshPhongMaterial( {
+        color: settings.memory.textColour, shading: THREE.FlatShading } );
+    var sideTextMaterial = new THREE.MeshPhongMaterial( {
+        color: settings.memory.textColour, shading: THREE.SmoothShading } );
+    textMaterial = new THREE.MeshFaceMaterial( [ frontTextMaterial, sideTextMaterial ] );
+
     var memBoxMaterial = new THREE.MeshPhongMaterial( {
-        color: settings.memory.colour, opacity: settings.memory.opacity, transparent: true } );
+        color: settings.memory.cellColour, opacity: settings.memory.cellOpacity, transparent: true } );
 
     var memoryGroup = new THREE.Group();
 
@@ -138,17 +153,40 @@ function init() {
         var memoryCellGroup = new THREE.Group();
         memoryCellGroup.name = "memCellGroup" + cellNum;
         memoryCellGroup.add( createText( "memText", "255", textMaterial ) );
-        memoryCellGroup.add( createBox( memBoxMaterial ) );
+        memoryCellGroup.add( createMemoryBox( memBoxMaterial ) );
         memoryCellGroup.position.x = (55 * cellNum) - 275;
 
         memoryGroup.add(memoryCellGroup);
     }
 
-    var floor = createPlane(floorMaterial);
+    // COMMAND CHARACTERS
+
+    var plusCommand = createText( "plusText", "+", textMaterial );
+    plusCommand.visible = false;
+
+    var minusCommand = createText( "minusText", "-", textMaterial );
+    minusCommand.visible = false;
+
+    // GUN
+
+    var gunGroup = new THREE.Group();
+    var gunMaterial = new THREE.MeshPhongMaterial( {
+        color: settings.gun.colour } );
+    var gunBox = createGunBox( gunMaterial );
+    var gunBarrel = createGunBarrel( gunMaterial );
+
+    gunGroup.add( gunBox );
+    gunGroup.add( gunBarrel );
+    gunGroup.add( plusCommand );
+    gunGroup.add( minusCommand );
+    gunGroup.position.z = 300;
+
+    // GROUP
 
     group = new THREE.Group();
     group.add(floor);
     group.add(memoryGroup);
+    group.add(gunGroup);
 
     scene.add( group );
 
@@ -167,13 +205,13 @@ function init() {
     stats.domElement.style.top = '0px';
     container.appendChild( stats.domElement );
 
-    // EVENT
+    // EVENTS
 
     container.addEventListener( 'mousedown', onDocumentMouseDown, false );
-
     window.addEventListener( 'resize', onWindowResize, false );
 
     // SETTINGS GUI
+
     var gui = new dat.GUI();
 
     var fogFolder = gui.addFolder("Fog");
@@ -236,11 +274,20 @@ function init() {
     });
 
     var memFolder = gui.addFolder("Memory");
-    memFolder.addColor(settings.memory, 'colour').onChange(function(value){
+    memFolder.addColor(settings.memory, 'cellColour').name("cell colour").onChange(function(value){
         memBoxMaterial.color.setStyle(value);
     });
-    memFolder.add(settings.memory, 'opacity', 0, 1).onChange(function(value){
+    memFolder.add(settings.memory, 'cellOpacity', 0, 1).name("cell opacity").onChange(function(value){
         memBoxMaterial.opacity = value;
+    });
+    memFolder.addColor(settings.memory, 'textColour').name("text colour").onChange(function(value){
+        frontTextMaterial.color.setStyle(value);
+        sideTextMaterial.color.setStyle(value);
+    });
+
+    var gunFolder = gui.addFolder("Gun");
+    gunFolder.addColor(settings.gun, 'colour').onChange(function(value){
+        gunMaterial.color.setStyle(value);
     });
 
     var sceneFolder = gui.addFolder("Scene");
@@ -288,6 +335,15 @@ function init() {
     renderFolder.add(settings.render, 'memory').onChange(function(value){
         memoryGroup.visible = value;
     });
+    renderFolder.add(settings.render, 'gun').onChange(function(value){
+        gunGroup.visible = value;
+    });
+    renderFolder.add(settings.render, 'bullet').onChange(function(value){
+        settings.render.bullet = value;
+        var bullet = scene.getObjectByName(bulletObject);
+        bullet.visible = value;
+    });
+
 }
 
 function createPlane(material) {
@@ -338,11 +394,28 @@ function createText(name, text, material) {
     return textMesh1;
 }
 
-function createBox(material) {
+function createMemoryBox(material) {
 
     var geometry = new THREE.BoxGeometry( 50, 50, 50 );
     var box = new THREE.Mesh( geometry, material );
     box.position.y = 25;
+    return box;
+}
+
+function createGunBox(material) {
+
+    var geometry = new THREE.BoxGeometry( 30, 30, 30 );
+    var box = new THREE.Mesh( geometry, material );
+    box.position.y = 25;
+    return box;
+}
+
+function createGunBarrel(material) {
+
+    var geometry = new THREE.BoxGeometry( 10, 10, 20 );
+    var box = new THREE.Mesh( geometry, material );
+    box.position.y = 25;
+    box.position.z = -25;
     return box;
 }
 
@@ -431,6 +504,19 @@ function render() {
 
     // Update memory cell
     //updateMemoryCell();
+
+    // render bullet
+    if (settings.render.bullet) {
+        var bullet = scene.getObjectByName(bulletObject);
+        bullet.visible = true;
+        var bulletZPos = (bullet.position.z - 5);
+        if (bulletZPos < -300) {
+            bulletZPos = -50;
+            bullet.visible = false;
+            bulletObject = (bulletObject == "plusText") ? "minusText" : "plusText";
+        }
+        bullet.position.setZ(bulletZPos);
+    }
 
     camera.lookAt( cameraTarget );
 
