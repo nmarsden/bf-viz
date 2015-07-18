@@ -1,0 +1,47 @@
+body {
+	font-family: Monospace;
+	background-color: #000;
+	color: #fff;
+	margin: 0;
+	overflow: hidden;
+}
+
+.overlay {
+    position: fixed;
+    background: rgba(0,0,0,0.1);
+    z-index: 99999;
+}
+
+.hidden {
+    display: none;
+}
+
+.heading-container {
+    width: 126px;
+    height: 44px;
+    top: 0;
+    left: 50%;
+    margin-left: -63px;
+    text-align: center;
+}
+
+.heading {
+    color: #fff;
+    margin-top: 3px;
+    font-size: 30px;
+}
+
+.program-container {
+    width: 500px;
+    height: 44px;
+    bottom: 0;
+    left: 50%;
+    margin-left: -250px;
+    text-align: center;
+}
+
+.program {
+    color: #fff;
+    margin-top: 3px;
+    font-size: 30px;
+}

@@ -61,7 +61,8 @@ var settings = {
         floor: false,
         memory: true,
         gun: true,
-        bullet: true
+        bullet: true,
+        helpers: false
     }
 };
 
@@ -189,6 +190,22 @@ function init() {
     group.add(gunGroup);
 
     scene.add( group );
+
+    // HELPERS
+
+    var dirLightHelper = new THREE.DirectionalLightHelper(dirLight, 10);
+    var pointLightHelper = new THREE.PointLightHelper(pointLight, 10);
+    var gridHelper = new THREE.GridHelper( 1000, 20 );
+    var axisHelper = new THREE.AxisHelper( 50 );
+    var cameraHelper = new THREE.CameraHelper(camera);
+
+    if (settings.render.helpers) {
+        scene.add(dirLightHelper);
+        scene.add(pointLightHelper);
+        scene.add(axisHelper);
+        group.add(gridHelper);
+        group.add(cameraHelper);
+    }
 
     // RENDERER
 
@@ -343,6 +360,24 @@ function init() {
         var bullet = scene.getObjectByName(bulletObject);
         bullet.visible = value;
     });
+    renderFolder.add(settings.render, 'helpers').onChange(function(value){
+        cameraHelper.visible = value;
+
+        if (value) {
+            scene.add(dirLightHelper);
+            scene.add(pointLightHelper);
+            scene.add(axisHelper);
+            scene.add(cameraHelper);
+            group.add(gridHelper);
+        } else {
+            scene.remove(dirLightHelper);
+            scene.remove(pointLightHelper);
+            scene.remove(axisHelper);
+            scene.remove(cameraHelper);
+            group.remove(gridHelper);
+        }
+    });
+
 
 }
 
