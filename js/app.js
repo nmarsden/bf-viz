@@ -10,6 +10,7 @@ var settings = {
         colour: "#3d4269"
     },
     memory: {
+        cellNumber: 50,
         cellColour: "#ffffff",
         cellOpacity: 0.12,
         textColour: "#d5de8d"
@@ -62,7 +63,10 @@ var settings = {
         memory: true,
         gun: true,
         bullet: true,
-        helpers: false
+        helpers: false,
+        directionLight: true,
+        pointLight: true,
+        ambientLight: true
     }
 };
 
@@ -70,7 +74,7 @@ var container, stats;
 
 var fog;
 
-var textMaterial;
+var floorMaterial, memBoxMaterial, frontTextMaterial, sideTextMaterial, gunMaterial;
 
 var camera, cameraTarget, scene, renderer;
 
@@ -101,7 +105,7 @@ function init() {
 
     // CAMERA
 
-    camera = new THREE.PerspectiveCamera( 30, window.innerWidth / window.innerHeight, 1, 1500 );
+    camera = new THREE.PerspectiveCamera( 30, window.innerWidth / window.innerHeight, 1, 2500 );
     camera.position.set( settings.camera.position.x, settings.camera.position.y, settings.camera.position.z );
     cameraTarget = new THREE.Vector3( settings.camera.target.x, settings.camera.target.y, settings.camera.target.z );
 
@@ -118,19 +122,22 @@ function init() {
 
     var dirLight = new THREE.DirectionalLight( settings.directionalLight.colour, settings.directionalLight.intensity );
     dirLight.position.set( settings.directionalLight.position.x, settings.directionalLight.position.y, settings.directionalLight.position.z );
-    scene.add( dirLight );
-
+    if (settings.render.directionLight) {
+        scene.add(dirLight);
+    }
     var pointLight = new THREE.PointLight( settings.pointLight.colour, settings.pointLight.intensity, settings.pointLight.distance );
     pointLight.position.set( settings.pointLight.position.x, settings.pointLight.position.y, settings.pointLight.position.z );
-    scene.add( pointLight );
-
+    if (settings.render.pointLight) {
+        scene.add(pointLight);
+    }
     var ambientLight = new THREE.AmbientLight( settings.ambientLight.colour );
-
-    scene.add( ambientLight );
+    if (settings.render.ambientLight) {
+        scene.add(ambientLight);
+    }
 
     // FLOOR
 
-    var floorMaterial = new THREE.MeshBasicMaterial( {
+    floorMaterial = new THREE.MeshBasicMaterial( {
         color: settings.floor.colour, transparent: false
     } );
     var floor = createPlane(floorMaterial);
@@ -138,24 +145,25 @@ function init() {
 
     // MEMORY
 
-    var frontTextMaterial = new THREE.MeshPhongMaterial( {
+    frontTextMaterial = new THREE.MeshPhongMaterial( {
         color: settings.memory.textColour, shading: THREE.FlatShading } );
-    var sideTextMaterial = new THREE.MeshPhongMaterial( {
+    sideTextMaterial = new THREE.MeshPhongMaterial( {
         color: settings.memory.textColour, shading: THREE.SmoothShading } );
-    textMaterial = new THREE.MeshFaceMaterial( [ frontTextMaterial, sideTextMaterial ] );
+    var textMaterial = new THREE.MeshFaceMaterial( [ frontTextMaterial, sideTextMaterial ] );
 
-    var memBoxMaterial = new THREE.MeshPhongMaterial( {
+    memBoxMaterial = new THREE.MeshPhongMaterial( {
         color: settings.memory.cellColour, opacity: settings.memory.cellOpacity, transparent: true } );
 
     var memoryGroup = new THREE.Group();
 
-    for (var cellNum=0; cellNum<10; cellNum++) {
+    var memoryCellXOffset = -(settings.memory.cellNumber / 2) * 55; //-275;
+    for (var cellNum=0; cellNum<settings.memory.cellNumber; cellNum++) {
 
         var memoryCellGroup = new THREE.Group();
         memoryCellGroup.name = "memCellGroup" + cellNum;
         memoryCellGroup.add( createText( "memText", "255", textMaterial ) );
         memoryCellGroup.add( createMemoryBox( memBoxMaterial ) );
-        memoryCellGroup.position.x = (55 * cellNum) - 275;
+        memoryCellGroup.position.x = (55 * cellNum) + memoryCellXOffset;
 
         memoryGroup.add(memoryCellGroup);
     }
@@ -171,7 +179,7 @@ function init() {
     // GUN
 
     var gunGroup = new THREE.Group();
-    var gunMaterial = new THREE.MeshPhongMaterial( {
+    gunMaterial = new THREE.MeshPhongMaterial( {
         color: settings.gun.colour } );
     var gunBox = createGunBox( gunMaterial );
     var gunBarrel = createGunBarrel( gunMaterial );
@@ -188,7 +196,6 @@ function init() {
     group.add(floor);
     group.add(memoryGroup);
     group.add(gunGroup);
-
     scene.add( group );
 
     // HELPERS
@@ -209,10 +216,11 @@ function init() {
 
     // RENDERER
 
-    renderer = new THREE.WebGLRenderer( { antialias: true } );
+    renderer = new THREE.WebGLRenderer( { antialias: false } );
     renderer.setClearColor( settings.fog.colour );
     renderer.setPixelRatio( window.devicePixelRatio );
     renderer.setSize( window.innerWidth, window.innerHeight );
+    renderer.sortObjects = false;
     container.appendChild( renderer.domElement );
 
     // STATS
@@ -264,7 +272,7 @@ function init() {
     dirLightFolder.add(settings.directionalLight.position, 'z', -1000, 1000).onChange(function(value){
         dirLight.position.setZ(value);
     });
-    
+
     var pointLightFolder = gui.addFolder("Point Light");
     pointLightFolder.addColor(settings.pointLight, "colour").onChange(function(value){
         pointLight.color.setStyle(value);
@@ -342,9 +350,7 @@ function init() {
         } else {
             scene.fog = null;
         }
-        memBoxMaterial.needsUpdate = true;
-        floorMaterial.needsUpdate = true;
-        textMaterial.needsUpdate = true;
+        setAllMaterialsNeedUpdate();
     });
     renderFolder.add(settings.render, 'floor').onChange(function(value){
         floor.visible = value;
@@ -377,8 +383,38 @@ function init() {
             group.remove(gridHelper);
         }
     });
+    renderFolder.add(settings.render, 'directionLight').name("direction light").onChange(function(value){
+        if (value) {
+            scene.add(dirLight);
+            setAllMaterialsNeedUpdate();
+        } else {
+            scene.remove(dirLight);
+        }
+    });
+    renderFolder.add(settings.render, 'pointLight').name("point light").onChange(function(value){
+        if (value) {
+            scene.add(pointLight);
+            setAllMaterialsNeedUpdate();
+        } else {
+            scene.remove(pointLight);
+        }
+    });
+    renderFolder.add(settings.render, 'ambientLight').name("ambient light").onChange(function(value){
+        if (value) {
+            scene.add(ambientLight);
+            setAllMaterialsNeedUpdate();
+        } else {
+            scene.remove(ambientLight);
+        }
+    });
+}
 
-
+function setAllMaterialsNeedUpdate() {
+    memBoxMaterial.needsUpdate = true;
+    floorMaterial.needsUpdate = true;
+    frontTextMaterial.needsUpdate = true;
+    sideTextMaterial.needsUpdate = true;
+    gunMaterial.needsUpdate = true;
 }
 
 function createPlane(material) {
@@ -532,9 +568,9 @@ function updateMemoryCell() {
 function render() {
     group.rotation.y += ( targetRotation - group.rotation.y ) * 0.05;
 
-    if (group.position.y >= 120 || group.position.y <= 80) {
-        y_diff = -y_diff;
-    }
+    //if (group.position.y >= 120 || group.position.y <= 80) {
+    //    y_diff = -y_diff;
+    //}
     //group.position.y += y_diff;
 
     // Update memory cell
@@ -555,7 +591,7 @@ function render() {
 
     camera.lookAt( cameraTarget );
 
-    renderer.clear();
+    //renderer.clear();
     renderer.render( scene, camera );
 }
 
