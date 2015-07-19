@@ -18,6 +18,12 @@ var settings = {
     gun: {
         colour: "#c07171"
     },
+    program: {
+        cellNumber: 50,
+        cellColour: "#ffffff",
+        cellOpacity: 0.12,
+        textColour: "#c07171"
+    },
     scene: {
         rotation: {
             y: -0.5
@@ -48,8 +54,8 @@ var settings = {
     camera: {
         position: {
             x: 0,
-            y: 200,
-            z: 700
+            y: 500,
+            z: 800
         },
         target: {
             x: 0,
@@ -63,6 +69,7 @@ var settings = {
         memory: true,
         gun: true,
         bullet: true,
+        program: true,
         helpers: false,
         directionLight: true,
         pointLight: true,
@@ -74,7 +81,8 @@ var container, stats;
 
 var fog;
 
-var floorMaterial, memBoxMaterial, frontTextMaterial, sideTextMaterial, gunMaterial;
+var floorMaterial, memBoxMaterial, memFrontTextMaterial, memSideTextMaterial, gunMaterial;
+var programBoxMaterial, programFrontTextMaterial, programSideTextMaterial;
 
 var camera, cameraTarget, scene, renderer;
 
@@ -94,6 +102,8 @@ var windowHalfY = window.innerHeight / 2;
 var y_diff = 0.1;
 
 var bulletObject = "plusText";
+
+var code = '++++++++++[>+++++++>++++++++++>+++>+<<<<-]>++.>+.+++++++..+++.>++.<<+++++++++++++++.>.+++.------.--------.>+.>.';
 
 init();
 animate();
@@ -145,35 +155,61 @@ function init() {
 
     // MEMORY
 
-    frontTextMaterial = new THREE.MeshPhongMaterial( {
+    memFrontTextMaterial = new THREE.MeshPhongMaterial( {
         color: settings.memory.textColour, shading: THREE.FlatShading } );
-    sideTextMaterial = new THREE.MeshPhongMaterial( {
+    memSideTextMaterial = new THREE.MeshPhongMaterial( {
         color: settings.memory.textColour, shading: THREE.SmoothShading } );
-    var textMaterial = new THREE.MeshFaceMaterial( [ frontTextMaterial, sideTextMaterial ] );
+    var memTextMaterial = new THREE.MeshFaceMaterial( [ memFrontTextMaterial, memSideTextMaterial ] );
 
     memBoxMaterial = new THREE.MeshPhongMaterial( {
         color: settings.memory.cellColour, opacity: settings.memory.cellOpacity, transparent: true } );
 
     var memoryGroup = new THREE.Group();
 
-    var memoryCellXOffset = -(settings.memory.cellNumber / 2) * 55; //-275;
+    var memoryCellXOffset = -(settings.memory.cellNumber / 2) * 55;
     for (var cellNum=0; cellNum<settings.memory.cellNumber; cellNum++) {
 
         var memoryCellGroup = new THREE.Group();
         memoryCellGroup.name = "memCellGroup" + cellNum;
-        memoryCellGroup.add( createText( "memText", "255", textMaterial ) );
+        memoryCellGroup.add( createText( "memText", "255", memTextMaterial ) );
         memoryCellGroup.add( createMemoryBox( memBoxMaterial ) );
         memoryCellGroup.position.x = (55 * cellNum) + memoryCellXOffset;
 
         memoryGroup.add(memoryCellGroup);
     }
 
+    // PROGRAM
+
+    programFrontTextMaterial = new THREE.MeshPhongMaterial( {
+        color: settings.program.textColour, shading: THREE.FlatShading } );
+    programSideTextMaterial = new THREE.MeshPhongMaterial( {
+        color: settings.program.textColour, shading: THREE.SmoothShading } );
+    var programTextMaterial = new THREE.MeshFaceMaterial( [ programFrontTextMaterial, programSideTextMaterial ] );
+
+    programBoxMaterial = new THREE.MeshPhongMaterial( {
+        color: settings.program.cellColour, opacity: settings.program.cellOpacity, transparent: true } );
+
+    var programGroup = new THREE.Group();
+
+    var programCellXOffset = 0;
+    for (cellNum=0; cellNum<settings.program.cellNumber; cellNum++) {
+
+        var programCellGroup = new THREE.Group();
+        programCellGroup.name = "programCellGroup" + cellNum;
+        programCellGroup.add( createText( "programText", code[cellNum], programTextMaterial ) );
+        programCellGroup.add( createMemoryBox( programBoxMaterial ) );
+        programCellGroup.position.x = (55 * cellNum) + programCellXOffset;
+        programCellGroup.position.z = 300;
+
+        programGroup.add(programCellGroup);
+    }
+
     // COMMAND CHARACTERS
 
-    var plusCommand = createText( "plusText", "+", textMaterial );
+    var plusCommand = createText( "plusText", "+", programTextMaterial );
     plusCommand.visible = false;
 
-    var minusCommand = createText( "minusText", "-", textMaterial );
+    var minusCommand = createText( "minusText", "-", programTextMaterial );
     minusCommand.visible = false;
 
     // GUN
@@ -196,6 +232,7 @@ function init() {
     group.add(floor);
     group.add(memoryGroup);
     group.add(gunGroup);
+    group.add(programGroup);
     scene.add( group );
 
     // HELPERS
@@ -306,8 +343,20 @@ function init() {
         memBoxMaterial.opacity = value;
     });
     memFolder.addColor(settings.memory, 'textColour').name("text colour").onChange(function(value){
-        frontTextMaterial.color.setStyle(value);
-        sideTextMaterial.color.setStyle(value);
+        memFrontTextMaterial.color.setStyle(value);
+        memSideTextMaterial.color.setStyle(value);
+    });
+
+    var programFolder = gui.addFolder("Program");
+    programFolder.addColor(settings.program, 'cellColour').name("cell colour").onChange(function(value){
+        programBoxMaterial.color.setStyle(value);
+    });
+    programFolder.add(settings.program, 'cellOpacity', 0, 1).name("cell opacity").onChange(function(value){
+        programBoxMaterial.opacity = value;
+    });
+    programFolder.addColor(settings.program, 'textColour').name("text colour").onChange(function(value){
+        programFrontTextMaterial.color.setStyle(value);
+        programSideTextMaterial.color.setStyle(value);
     });
 
     var gunFolder = gui.addFolder("Gun");
@@ -329,7 +378,7 @@ function init() {
     cameraPositionFolder.add(settings.camera.position, 'y', -1000, 1000).onChange(function(value){
         camera.position.setY(value);
     });
-    cameraPositionFolder.add(settings.camera.position, 'z', -1000, 1000).onChange(function(value){
+    cameraPositionFolder.add(settings.camera.position, 'z', -1300, 1300).onChange(function(value){
         camera.position.setZ(value);
     });
     var cameraTargetFolder = cameraFolder.addFolder("Target");
@@ -365,6 +414,9 @@ function init() {
         settings.render.bullet = value;
         var bullet = scene.getObjectByName(bulletObject);
         bullet.visible = value;
+    });
+    renderFolder.add(settings.render, 'program').onChange(function(value){
+        programGroup.visible = value;
     });
     renderFolder.add(settings.render, 'helpers').onChange(function(value){
         cameraHelper.visible = value;
@@ -410,11 +462,14 @@ function init() {
 }
 
 function setAllMaterialsNeedUpdate() {
-    memBoxMaterial.needsUpdate = true;
     floorMaterial.needsUpdate = true;
-    frontTextMaterial.needsUpdate = true;
-    sideTextMaterial.needsUpdate = true;
+    memBoxMaterial.needsUpdate = true;
+    memFrontTextMaterial.needsUpdate = true;
+    memSideTextMaterial.needsUpdate = true;
     gunMaterial.needsUpdate = true;
+    programBoxMaterial.needsUpdate = true;
+    programFrontTextMaterial.needsUpdate = true;
+    programSideTextMaterial.needsUpdate = true;
 }
 
 function createPlane(material) {
