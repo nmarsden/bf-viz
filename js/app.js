@@ -68,7 +68,6 @@ var settings = {
         floor: false,
         memory: true,
         gun: true,
-        bullet: true,
         program: true,
         helpers: false,
         directionLight: true,
@@ -86,7 +85,7 @@ var programBoxMaterial, programFrontTextMaterial, programSideTextMaterial;
 
 var camera, cameraTarget, scene, renderer;
 
-var group;
+var group, gunGroup;
 
 //var text = "  0  12  34 156  78 255   0   0   0   0",
 
@@ -103,7 +102,13 @@ var y_diff = 0.1;
 
 var bulletObject = "plusText";
 
+var commands = [ '>', '<', '+', '-', '.', ',', '[', ']' ];
+var commandTexts = {};
+var cp = 0;
+var currentCommandText;
+
 var code = '++++++++++[>+++++++>++++++++++>+++>+<<<<-]>++.>+.+++++++..+++.>++.<<+++++++++++++++.>.+++.------.--------.>+.>.';
+var codeSize = code.length;
 
 init();
 animate();
@@ -204,17 +209,21 @@ function init() {
         programGroup.add(programCellGroup);
     }
 
-    // COMMAND CHARACTERS
+    // COMMAND TEXT
 
-    var plusCommand = createText( "plusText", "+", programTextMaterial );
-    plusCommand.visible = false;
+    var numCommands = commands.length;
+    for (var i=0; i<numCommands; i++) {
+        var cmd = commands[i];
+        var cmdText = createText( "cmdText_" + cmd, cmd, programTextMaterial );
+        cmdText.position.z = -50;
+        commandTexts[cmd] = cmdText;
+    }
 
-    var minusCommand = createText( "minusText", "-", programTextMaterial );
-    minusCommand.visible = false;
+    currentCommandText = commandTexts[code[cp]];
 
     // GUN
 
-    var gunGroup = new THREE.Group();
+    gunGroup = new THREE.Group();
     gunMaterial = new THREE.MeshPhongMaterial( {
         color: settings.gun.colour } );
     var gunBox = createGunBox( gunMaterial );
@@ -222,8 +231,6 @@ function init() {
 
     gunGroup.add( gunBox );
     gunGroup.add( gunBarrel );
-    gunGroup.add( plusCommand );
-    gunGroup.add( minusCommand );
     gunGroup.position.z = 300;
 
     // GROUP
@@ -409,11 +416,6 @@ function init() {
     });
     renderFolder.add(settings.render, 'gun').onChange(function(value){
         gunGroup.visible = value;
-    });
-    renderFolder.add(settings.render, 'bullet').onChange(function(value){
-        settings.render.bullet = value;
-        var bullet = scene.getObjectByName(bulletObject);
-        bullet.visible = value;
     });
     renderFolder.add(settings.render, 'program').onChange(function(value){
         programGroup.visible = value;
@@ -623,26 +625,32 @@ function updateMemoryCell() {
 function render() {
     group.rotation.y += ( targetRotation - group.rotation.y ) * 0.05;
 
-    //if (group.position.y >= 120 || group.position.y <= 80) {
-    //    y_diff = -y_diff;
-    //}
-    //group.position.y += y_diff;
-
     // Update memory cell
     //updateMemoryCell();
 
-    // render bullet
-    if (settings.render.bullet) {
-        var bullet = scene.getObjectByName(bulletObject);
-        bullet.visible = true;
-        var bulletZPos = (bullet.position.z - 5);
-        if (bulletZPos < -300) {
-            bulletZPos = -50;
-            bullet.visible = false;
-            bulletObject = (bulletObject == "plusText") ? "minusText" : "plusText";
+    // animate command bullet
+    var bulletZPos = (currentCommandText.position.z - 5);
+    if (bulletZPos < -300) {
+
+        gunGroup.remove(currentCommandText);
+
+        // TODO animate code pointer
+
+
+        cp++;
+        if (cp === codeSize) {
+            cp = 0;
         }
-        bullet.position.setZ(bulletZPos);
+
+        currentCommandText = commandTexts[code[cp]];
+        bulletZPos = -50;
+
+        currentCommandText.position.setZ(bulletZPos);
+
+        gunGroup.add(currentCommandText);
     }
+    currentCommandText.position.setZ(bulletZPos);
+
 
     camera.lookAt( cameraTarget );
 
