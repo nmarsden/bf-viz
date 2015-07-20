@@ -85,7 +85,7 @@ var programBoxMaterial, programFrontTextMaterial, programSideTextMaterial;
 
 var camera, cameraTarget, scene, renderer;
 
-var group, gunGroup;
+var group, gunGroup, programGroup;
 
 //var text = "  0  12  34 156  78 255   0   0   0   0",
 
@@ -98,19 +98,21 @@ var mouseXOnMouseDown = 0;
 var windowHalfX = window.innerWidth / 2;
 var windowHalfY = window.innerHeight / 2;
 
-var y_diff = 0.1;
-
-var bulletObject = "plusText";
-
 var commands = [ '>', '<', '+', '-', '.', ',', '[', ']' ];
 var commandTexts = {};
-var cp = 0;
+var cp = -1;
 var currentCommandText;
 
-var code = '++++++++++[>+++++++>++++++++++>+++>+<<<<-]>++.>+.+++++++..+++.>++.<<+++++++++++++++.>.+++.------.--------.>+.>.';
+var code = "++[>>--<<],.+";
+//var code = '++++++++++[>+++++++>++++++++++>+++>+<<<<-]>++.>+.+++++++..+++.>++.<<+++++++++++++++.>.+++.------.--------.>+.>.';
 var codeSize = code.length;
 
-init();
+var animState = {
+    commandBulletPosition: { z: -50 },
+    programGroupPosition: { x: 55 }
+};
+
+init()
 animate();
 
 function init() {
@@ -194,20 +196,22 @@ function init() {
     programBoxMaterial = new THREE.MeshPhongMaterial( {
         color: settings.program.cellColour, opacity: settings.program.cellOpacity, transparent: true } );
 
-    var programGroup = new THREE.Group();
+    programGroup = new THREE.Group();
 
     var programCellXOffset = 0;
-    for (cellNum=0; cellNum<settings.program.cellNumber; cellNum++) {
+    var numProgramCells = Math.min(settings.program.cellNumber, codeSize);
+    for (cellNum=0; cellNum<numProgramCells; cellNum++) {
 
         var programCellGroup = new THREE.Group();
         programCellGroup.name = "programCellGroup" + cellNum;
         programCellGroup.add( createText( "programText", code[cellNum], programTextMaterial ) );
         programCellGroup.add( createMemoryBox( programBoxMaterial ) );
         programCellGroup.position.x = (55 * cellNum) + programCellXOffset;
-        programCellGroup.position.z = 300;
 
         programGroup.add(programCellGroup);
     }
+    programGroup.position.z = 300;
+    programGroup.position.x = 55;
 
     // COMMAND TEXT
 
@@ -461,6 +465,9 @@ function init() {
             scene.remove(ambientLight);
         }
     });
+
+    // Start program
+    setInterval(nextCommand, 3000);
 }
 
 function setAllMaterialsNeedUpdate() {
@@ -606,6 +613,7 @@ function animate() {
 
     requestAnimationFrame( animate );
 
+    TWEEN.update();
     render();
     stats.update();
 }
@@ -622,35 +630,45 @@ function updateMemoryCell() {
     memCellGroup.add(newMemText);
 }
 
+function nextCommand() {
+
+    cp++;
+    if (cp === codeSize) {
+        cp = 0;
+        animState.programGroupPosition.x = 55;
+    }
+
+    var programTween = new TWEEN.Tween( animState.programGroupPosition )
+        .to( { x: "-55" }, 1000 )
+        .onUpdate( function () {
+            programGroup.position.setX(this.x);
+        } )
+        .onComplete( function () {
+
+            currentCommandText = commandTexts[code[cp]];
+            currentCommandText.position.setZ(-50);
+            gunGroup.add(currentCommandText);
+            animState.commandBulletPosition.z = -50;
+
+            var bulletTween = new TWEEN.Tween( animState.commandBulletPosition )
+                .to( { z: -300 }, 1500 )
+                .onUpdate( function () {
+                    currentCommandText.position.setZ(this.z);
+                } )
+                .onComplete( function () {
+                    gunGroup.remove(currentCommandText);
+                })
+                .start();
+
+        })
+        .start();
+}
+
 function render() {
     group.rotation.y += ( targetRotation - group.rotation.y ) * 0.05;
 
     // Update memory cell
     //updateMemoryCell();
-
-    // animate command bullet
-    var bulletZPos = (currentCommandText.position.z - 5);
-    if (bulletZPos < -300) {
-
-        gunGroup.remove(currentCommandText);
-
-        // TODO animate code pointer
-
-
-        cp++;
-        if (cp === codeSize) {
-            cp = 0;
-        }
-
-        currentCommandText = commandTexts[code[cp]];
-        bulletZPos = -50;
-
-        currentCommandText.position.setZ(bulletZPos);
-
-        gunGroup.add(currentCommandText);
-    }
-    currentCommandText.position.setZ(bulletZPos);
-
 
     camera.lookAt( cameraTarget );
 
