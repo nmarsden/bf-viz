@@ -210,8 +210,8 @@ function init() {
 
     programGroup = new THREE.Group();
 
-    var initialNumHiddenCells = (settings.program.numCells) / 2;
-    var programCellOffset = (settings.program.numCells / 2) - 1;
+    var initialNumHiddenCells = (settings.program.numCells / 2) + 1;
+    var programCellOffset = (settings.program.numCells / 2);
     var programCellGroup;
     for (cellNum=0; cellNum<settings.program.numCells; cellNum++) {
         var cp = cellNum - initialNumHiddenCells;
@@ -654,6 +654,23 @@ function nextCommand() {
         return;
     }
 
+    // Setup the next command cell ready to be scrolled into the program code view from the right
+    animState.program.leftMostCellNum = (animState.program.leftMostCellNum + 1) % settings.program.numCells;
+    animState.program.rightMostCellNum = (animState.program.rightMostCellNum + 1) % settings.program.numCells;
+    animState.program.hiddenCellNum = (animState.program.hiddenCellNum + 1) % settings.program.numCells;
+
+    animState.program.rightMostCellPositionX += 55;
+
+    var nextCell = scene.getObjectByName("programCellGroup" + animState.program.hiddenCellNum);
+    var programText = nextCell.getObjectByName("programText");
+
+    var nextShownCodePointer = codePointer + (settings.program.numCells / 2);
+    var nextShownCommand = nextShownCodePointer < codeSize ? code[nextShownCodePointer] : "";
+    var newProgramText = createText( "programText", nextShownCommand, programTextMaterial );
+    nextCell.remove(programText);
+    nextCell.add(newProgramText);
+    nextCell.position.setX(animState.program.rightMostCellPositionX);
+
     var programTween = new TWEEN.Tween( animState.programGroupPosition )
         .to( { x: "-55" }, 1000 )
         .onUpdate( function () {
@@ -661,28 +678,15 @@ function nextCommand() {
         } )
         .onComplete( function () {
 
-            currentCommandText = commandTexts[code[codePointer]];
+            var cmd = code[codePointer];
+
+            // TODO decide on action based on cmd
+
+            // Fire command bullet
+            currentCommandText = commandTexts[cmd];
             currentCommandText.position.setZ(-50);
             gunGroup.add(currentCommandText);
             animState.commandBulletPosition.z = -50;
-
-            // Setup the next command cell ready to be scrolled into the program code view from the right
-            animState.program.leftMostCellNum = (animState.program.leftMostCellNum + 1) % settings.program.numCells;
-            animState.program.rightMostCellNum = (animState.program.rightMostCellNum + 1) % settings.program.numCells;
-            animState.program.hiddenCellNum = (animState.program.hiddenCellNum + 1) % settings.program.numCells;
-
-            animState.program.rightMostCellPositionX += 55;
-            
-            var nextCell = scene.getObjectByName("programCellGroup" + animState.program.hiddenCellNum);
-            var programText = nextCell.getObjectByName("programText");
-
-            var nextShownCodePointer = codePointer + (settings.program.numCells / 2);
-            var nextShownCommand = nextShownCodePointer < codeSize ? code[nextShownCodePointer] : "";
-            var newProgramText = createText( "programText", nextShownCommand, programTextMaterial );
-            nextCell.remove(programText);
-            nextCell.add(newProgramText);
-            nextCell.position.setX(animState.program.rightMostCellPositionX);
-
             var bulletTween = new TWEEN.Tween( animState.commandBulletPosition )
                 .to( { z: -300 }, 1500 )
                 .onUpdate( function () {
