@@ -10,7 +10,7 @@ var settings = {
         colour: "#3d4269"
     },
     memory: {
-        numCells: 50,
+        numCells: 20,
         cellColour: "#ffffff",
         cellOpacity: 0.12,
         textColour: "#d5de8d"
@@ -19,7 +19,7 @@ var settings = {
         colour: "#c07171"
     },
     program: {
-        numCells: 50,
+        numCells: 20,
         cellColour: "#ffffff",
         cellOpacity: 0.12,
         textColour: "#c07171"
@@ -102,10 +102,10 @@ var currentCommandText;
 
 
 //var code = "++[>>--<<],.+";
-//var code = '><+-';
+//var code = '><+-><+-';
 //var code = '><+-.,[]><+-.,[]><+-.,[]><+-.,[]><+-.,[]><+-.,[]><+-.,[]><+-.,[]><+-.,[]><+-.,[]><+-.,[]><+-.,[]><+-.,[]><+-.,[]><+-.,[]><+-.,[]><+-.,[]><+-.,[]';
 //var code = '++++++++++[>+++++++>++++++++++>+++>+<<<<-]>++.>+.+++++++..+++.>++.<<+++++++++++++++.>.+++.------.--------.>+.>.';
-var code = "+++>++>++++>";
+var code = "+<+<+<>>>+>+>+";
 var codeSize = code.length;
 var codePointer = -1;
 
@@ -125,16 +125,21 @@ var animState = {
     programGroupPosition: { x: 0 },
     memoryGroupPosition: { x: 0 },
     program: {
+        leftEndPositionX: -55 * (settings.program.numCells / 2),
+        rightEndPositionX: 55 * (settings.program.numCells / 2),
         leftMostCellNum: 0,
         rightMostCellNum: settings.program.numCells-1,
         hiddenCellNum: settings.program.numCells-1,
         rightMostCellPositionX: 0
     },
     memory: {
+        leftEndPositionX: -55 * (settings.memory.numCells / 2),
+        rightEndPositionX: 55 * (settings.memory.numCells / 2),
         currentCellNum: settings.memory.numCells / 2,
         leftMostCellNum: 0,
         rightMostCellNum: settings.memory.numCells-1,
         hiddenCellNum: settings.memory.numCells-1,
+        leftMostCellPositionX: 0,
         rightMostCellPositionX: 0
     }
 };
@@ -202,6 +207,8 @@ function init() {
 
     var memoryPointerOffset = (settings.memory.numCells / 2);
     var memoryCellOffset = (settings.memory.numCells / 2);
+    animState.memory.leftMostCellPositionX = 55 * (-memoryCellOffset);
+
     var memoryCellGroup;
     for (var cellNum=0; cellNum<settings.memory.numCells; cellNum++) {
         var memPointer = cellNum - memoryPointerOffset;
@@ -217,7 +224,16 @@ function init() {
         memoryGroup.add(memoryCellGroup);
     }
     animState.memory.rightMostCellPositionX = memoryCellGroup.position.x;
-    
+
+    // MEMORY ENDS
+
+    var memBoxEndsMaterial = new THREE.MeshPhongMaterial( {
+        color: settings.memory.cellColour } );
+    var leftMemEnd = createBox( memBoxEndsMaterial );
+    leftMemEnd.position.setX(animState.memory.leftEndPositionX);
+    var rightMemEnd = createBox( memBoxEndsMaterial );
+    rightMemEnd.position.setX(animState.memory.rightEndPositionX);
+
     // PROGRAM
 
     programFrontTextMaterial = new THREE.MeshPhongMaterial( {
@@ -250,6 +266,17 @@ function init() {
     programGroup.position.z = 300;
     programGroup.position.x = 0;
 
+    // PROGRAM ENDS
+
+    var programBoxEndsMaterial = new THREE.MeshPhongMaterial( {
+        color: settings.program.cellColour } );
+    var leftProgramEnd = createBox( programBoxEndsMaterial );
+    leftProgramEnd.position.setX(animState.program.leftEndPositionX);
+    leftProgramEnd.position.setZ(300);
+    var rightProgramEnd = createBox( programBoxEndsMaterial );
+    rightProgramEnd.position.setX(animState.program.rightEndPositionX);
+    rightProgramEnd.position.setZ(300);
+
     // COMMAND TEXT
 
     var numCommands = commands.length;
@@ -259,8 +286,6 @@ function init() {
         cmdText.position.z = -50;
         commandTexts[cmd] = cmdText;
     }
-
-    currentCommandText = commandTexts[code[codePointer]];
 
     // GUN
 
@@ -278,9 +303,13 @@ function init() {
 
     group = new THREE.Group();
     group.add(floor);
+    group.add(leftMemEnd);
     group.add(memoryGroup);
+    group.add(rightMemEnd);
     group.add(gunGroup);
+    group.add(leftProgramEnd);
     group.add(programGroup);
+    group.add(rightProgramEnd);
     scene.add( group );
 
     // HELPERS
@@ -591,16 +620,6 @@ function createGunBarrel(material) {
     return box;
 }
 
-//			function refreshText() {
-//
-//				group.remove( textMesh1 );
-//
-//				if ( !text ) return;
-//
-//				createText();
-//			}
-
-
 function onWindowResize() {
 
     windowHalfX = window.innerWidth / 2;
@@ -658,6 +677,7 @@ function animate() {
 function nextCommand() {
 
     codePointer++;
+
     if (codePointer === codeSize) {
         clearInterval(nextCommandInterval);
         return;
@@ -673,7 +693,7 @@ function nextCommand() {
     var nextCell = scene.getObjectByName("programCellGroup" + animState.program.hiddenCellNum);
     var programText = nextCell.getObjectByName("programText");
 
-    var nextShownCodePointer = codePointer + (settings.program.numCells / 2);
+    var nextShownCodePointer = codePointer + (settings.program.numCells / 2) - 1;
     var nextShownCommand = nextShownCodePointer < codeSize ? code[nextShownCodePointer] : "";
     var newProgramText = createText( "programText", nextShownCommand, programTextMaterial );
     nextCell.remove(programText);
@@ -681,7 +701,7 @@ function nextCommand() {
     nextCell.position.setX(animState.program.rightMostCellPositionX);
 
     var programTween = new TWEEN.Tween( animState.programGroupPosition )
-        .to( { x: "-55" }, 1000 )
+        .to( { x: "-55" }, 500 )
         .onUpdate( function () {
             programGroup.position.setX(this.x);
         } )
@@ -694,11 +714,24 @@ function nextCommand() {
                     if (memoryPointer === memorySize) {
                         memoryPointer = 0;
                     }
-                    fireCommandBullet(cmd, animateMemoryRight);
+                    fireCommandBullet(cmd, animateMemoryToTheLeft);
+                    break;
+
+                case '<':
+                    memoryPointer--;
+                    if (memoryPointer < 0) {
+                        memoryPointer = memorySize-1;
+                    }
+                    fireCommandBullet(cmd, animateMemoryToTheRight);
                     break;
 
                 case '+':
                     memory[memoryPointer] = ((memory[memoryPointer] || 0) + 1) & 255;
+                    fireCommandBullet(cmd, animateMemoryValueChanged);
+                    break;
+
+                case '-':
+                    memory[memoryPointer] = ((memory[memoryPointer] || 0) - 1) & 255;
                     fireCommandBullet(cmd, animateMemoryValueChanged);
                     break;
             }
@@ -712,7 +745,7 @@ function fireCommandBullet(cmd, onCompleteCallback) {
     gunGroup.add(currentCommandText);
     animState.commandBulletPosition.z = -50;
     var bulletTween = new TWEEN.Tween( animState.commandBulletPosition )
-        .to( { z: -300 }, 1500 )
+        .to( { z: -300 }, 1000 )
         .onUpdate( function () {
             currentCommandText.position.setZ(this.z);
         } )
@@ -723,28 +756,101 @@ function fireCommandBullet(cmd, onCompleteCallback) {
         .start();
 }
 
-function animateMemoryRight() {
+function incrementCellNumWithWrap(cellNum, totalNumCells) {
+    return (cellNum + 1) % totalNumCells;
+}
 
-    // Setup the next memory cell ready to be scrolled into the memory view from the right
-    animState.memory.currentCellNum = (animState.memory.currentCellNum + 1) % settings.memory.numCells;
-    animState.memory.leftMostCellNum = (animState.memory.leftMostCellNum + 1) % settings.memory.numCells;
-    animState.memory.rightMostCellNum = (animState.memory.rightMostCellNum + 1) % settings.memory.numCells;
-    animState.memory.hiddenCellNum = (animState.memory.hiddenCellNum + 1) % settings.memory.numCells;
+function decrementCellNumWithWrap(cellNum, totalNumCells) {
+    var newCellNum = cellNum - 1;
+    if (newCellNum < 0) {
+        newCellNum = totalNumCells - 1;
+    }
+    return newCellNum;
+}
 
-    animState.memory.rightMostCellPositionX += 55;
+function incrementMemoryCellNumWithWrap(cellNum) {
+    return incrementCellNumWithWrap(cellNum, settings.memory.numCells);
+}
 
-    var nextCell = scene.getObjectByName("memoryCellGroup" + animState.memory.hiddenCellNum);
-    var memoryText = nextCell.getObjectByName("memoryText");
+function decrementMemoryCellNumWithWrap(cellNum) {
+    return decrementCellNumWithWrap(cellNum, settings.memory.numCells);
+}
 
-    var nextShownMemoryPointer = (memoryPointer + (settings.memory.numCells / 2) - 1) % memorySize;
-    var nextShownMemoryValue = getMemoryValue(nextShownMemoryPointer);
-    var newMemoryText = createText( "memoryText", nextShownMemoryValue, memoryTextMaterial );
-    nextCell.remove(memoryText);
-    nextCell.add(newMemoryText);
-    nextCell.position.setX(animState.memory.rightMostCellPositionX);
+function animateMemoryToTheLeft() {
 
+    var rightMostCell = scene.getObjectByName("memoryCellGroup" + animState.memory.rightMostCellNum);
+    if (animState.memoryGroupPosition.x + rightMostCell.position.x != animState.memory.rightEndPositionX) {
+
+        // Setup the next memory cell ready to be scrolled into the memory view from the right
+        animState.memory.leftMostCellNum = incrementMemoryCellNumWithWrap(animState.memory.leftMostCellNum);
+        animState.memory.rightMostCellNum = incrementMemoryCellNumWithWrap(animState.memory.rightMostCellNum);
+        var nextCellNum = animState.memory.rightMostCellNum;
+
+        animState.memory.leftMostCellPositionX += 55;
+        animState.memory.rightMostCellPositionX += 55;
+
+        var nextCell = scene.getObjectByName("memoryCellGroup" + nextCellNum);
+        var memoryText = nextCell.getObjectByName("memoryText");
+
+        var nextShownMemoryPointer = (memoryPointer + (settings.memory.numCells / 2) - 1) % memorySize;
+        var nextShownMemoryValue = getMemoryValue(nextShownMemoryPointer);
+        var newMemoryText = createText( "memoryText", nextShownMemoryValue, memoryTextMaterial );
+        nextCell.remove(memoryText);
+        nextCell.add(newMemoryText);
+        nextCell.position.setX(animState.memory.rightMostCellPositionX);
+    }
+    animState.memory.currentCellNum = incrementMemoryCellNumWithWrap(animState.memory.currentCellNum);
+
+    // Move memory group
     var memoryTween = new TWEEN.Tween( animState.memoryGroupPosition )
-        .to( { x: "-55" }, 1000 )
+        .to( { x: "-55" }, 500 )
+        .onUpdate( function () {
+            memoryGroup.position.setX(this.x);
+        } )
+        .start();
+}
+
+function debugMemory() {
+    var msg = "";
+    for (var i=0; i < settings.memory.numCells; i++) {
+        var cell = scene.getObjectByName("memoryCellGroup" + i);
+        msg += "[" + i + ":" + (cell.position.x + memoryGroup.position.x) + "]";
+    }
+    console.log(msg);
+    console.log("leftMostCellNum", animState.memory.leftMostCellNum, "currentCellNum", animState.memory.currentCellNum, "rightMostCellNum", animState.memory.rightMostCellNum);
+}
+
+function animateMemoryToTheRight() {
+
+    // Setup the next memory cell ready to be scrolled into the memory view from the left
+    var leftMostCell = scene.getObjectByName("memoryCellGroup" + animState.memory.leftMostCellNum);
+    if (animState.memoryGroupPosition.x + leftMostCell.position.x != animState.memory.leftEndPositionX) {
+
+        animState.memory.leftMostCellNum = decrementMemoryCellNumWithWrap(animState.memory.leftMostCellNum);
+        animState.memory.rightMostCellNum = decrementMemoryCellNumWithWrap(animState.memory.rightMostCellNum);
+        var nextCellNum = animState.memory.leftMostCellNum;
+
+        animState.memory.leftMostCellPositionX -= 55;
+        animState.memory.rightMostCellPositionX -= 55;
+
+        var nextCell = scene.getObjectByName("memoryCellGroup" + nextCellNum);
+        var memoryText = nextCell.getObjectByName("memoryText");
+
+        var nextShownMemoryPointer = (memoryPointer - (settings.memory.numCells / 2) - 1);
+        if (nextShownMemoryPointer < 0) {
+            nextShownMemoryPointer = memorySize - 1;
+        }
+        var nextShownMemoryValue = getMemoryValue(nextShownMemoryPointer);
+        var newMemoryText = createText("memoryText", nextShownMemoryValue, memoryTextMaterial);
+        nextCell.remove(memoryText);
+        nextCell.add(newMemoryText);
+        nextCell.position.setX(animState.memory.leftMostCellPositionX);
+    }
+    animState.memory.currentCellNum = decrementMemoryCellNumWithWrap(animState.memory.currentCellNum);
+
+    // Move memory group
+    var memoryTween = new TWEEN.Tween( animState.memoryGroupPosition )
+        .to( { x: "+55" }, 500 )
         .onUpdate( function () {
             memoryGroup.position.setX(this.x);
         } )
@@ -767,12 +873,8 @@ function getMemoryValue(cellNum) {
 function render() {
     group.rotation.y += ( targetRotation - group.rotation.y ) * 0.05;
 
-    // Update memory cell
-    //updateMemoryCell();
-
     camera.lookAt( cameraTarget );
 
-    //renderer.clear();
     renderer.render( scene, camera );
 }
 
