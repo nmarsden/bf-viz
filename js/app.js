@@ -100,18 +100,30 @@ var commands = [ '>', '<', '+', '-', '.', ',', '[', ']' ];
 var commandTexts = {};
 var currentCommandText;
 
+var input = '23\n';
+var inputPointer = 0;
 
-//var code = "++[>>--<<],.+";
-//var code = '><+-><+-';
-//var code = '><+-.,[]><+-.,[]><+-.,[]><+-.,[]><+-.,[]><+-.,[]><+-.,[]><+-.,[]><+-.,[]><+-.,[]><+-.,[]><+-.,[]><+-.,[]><+-.,[]><+-.,[]><+-.,[]><+-.,[]><+-.,[]';
-//var code = '++++++++++[>+++++++>++++++++++>+++>+<<<<-]>++.>+.+++++++..+++.>++.<<+++++++++++++++.>.+++.------.--------.>+.>.';
-var code = "+<+<+<>>>+>+>+";
+//var code = "+[--->++<]>++++..."; // Outputs: ZZZ
+//var code = "-[--->+<]>-------.>--[----->+<]>-.++++.+++."; // Outputs: Neil
+var code = '++++++++++[>+++++++>++++++++++>+++>+<<<<-]>++.>+.+++++++..+++.>++.<<+++++++++++++++.>.+++.------.--------.>+.>.'; // Outputs: Hello World!
 var codeSize = code.length;
 var codePointer = -1;
 
 var memory = {};
 var memorySize = 10000;
 var memoryPointer = 0;
+
+// Init loopIn and loopOut
+var loopIn = {}, loopOut = {};
+var tmp = [];
+for (var cp = 0; cp < codeSize; cp++) {
+    if (code[cp] == '[') {
+        tmp.push(cp);
+    }
+    else if (code[cp] == ']') {
+        loopOut[loopIn[cp] = tmp.pop()] = cp;
+    }
+}
 
 // Init DEBUG memory
 //for (var n=0; n<memorySize; n++) {
@@ -130,7 +142,9 @@ var animState = {
         leftMostCellNum: 0,
         rightMostCellNum: settings.program.numCells-1,
         hiddenCellNum: settings.program.numCells-1,
-        rightMostCellPositionX: 0
+        leftMostCellPositionX: 0,
+        rightMostCellPositionX: 0,
+        codePointer: codePointer
     },
     memory: {
         leftEndPositionX: -55 * (settings.memory.numCells / 2),
@@ -249,6 +263,7 @@ function init() {
 
     var programPointerOffset = (settings.program.numCells / 2) + 1;
     var programCellOffset = (settings.program.numCells / 2);
+    animState.program.leftMostCellPositionX = 55 * (-programCellOffset);
     var programCellGroup;
     for (cellNum=0; cellNum<settings.program.numCells; cellNum++) {
         var cp = cellNum - programPointerOffset;
@@ -352,6 +367,7 @@ function init() {
     // SETTINGS GUI
 
     var gui = new dat.GUI();
+    gui.close();
 
     var fogFolder = gui.addFolder("Fog");
     fogFolder.addColor(settings.fog, "colour").onChange(function(value){
@@ -533,6 +549,10 @@ function init() {
     });
 
     // Start program
+    startNextCommandLoop();
+}
+
+function startNextCommandLoop() {
     nextCommandInterval = setInterval(nextCommand, 3000);
 }
 
@@ -683,60 +703,78 @@ function nextCommand() {
         return;
     }
 
-    // Setup the next command cell ready to be scrolled into the program code view from the right
-    animState.program.leftMostCellNum = (animState.program.leftMostCellNum + 1) % settings.program.numCells;
-    animState.program.rightMostCellNum = (animState.program.rightMostCellNum + 1) % settings.program.numCells;
-    animState.program.hiddenCellNum = (animState.program.hiddenCellNum + 1) % settings.program.numCells;
+    animateProgramToTheLeft(processCommand);
+}
 
-    animState.program.rightMostCellPositionX += 55;
+function processCommand() {
 
-    var nextCell = scene.getObjectByName("programCellGroup" + animState.program.hiddenCellNum);
-    var programText = nextCell.getObjectByName("programText");
+    var cmd = code[codePointer], prevCodePointer, times;
 
-    var nextShownCodePointer = codePointer + (settings.program.numCells / 2) - 1;
-    var nextShownCommand = nextShownCodePointer < codeSize ? code[nextShownCodePointer] : "";
-    var newProgramText = createText( "programText", nextShownCommand, programTextMaterial );
-    nextCell.remove(programText);
-    nextCell.add(newProgramText);
-    nextCell.position.setX(animState.program.rightMostCellPositionX);
-
-    var programTween = new TWEEN.Tween( animState.programGroupPosition )
-        .to( { x: "-55" }, 500 )
-        .onUpdate( function () {
-            programGroup.position.setX(this.x);
-        } )
-        .onComplete( function () {
-
-            var cmd = code[codePointer];
-            switch(cmd) {
-                case '>':
-                    memoryPointer++;
-                    if (memoryPointer === memorySize) {
-                        memoryPointer = 0;
-                    }
-                    fireCommandBullet(cmd, animateMemoryToTheLeft);
-                    break;
-
-                case '<':
-                    memoryPointer--;
-                    if (memoryPointer < 0) {
-                        memoryPointer = memorySize-1;
-                    }
-                    fireCommandBullet(cmd, animateMemoryToTheRight);
-                    break;
-
-                case '+':
-                    memory[memoryPointer] = ((memory[memoryPointer] || 0) + 1) & 255;
-                    fireCommandBullet(cmd, animateMemoryValueChanged);
-                    break;
-
-                case '-':
-                    memory[memoryPointer] = ((memory[memoryPointer] || 0) - 1) & 255;
-                    fireCommandBullet(cmd, animateMemoryValueChanged);
-                    break;
+    switch(cmd) {
+        case '>':
+            memoryPointer++;
+            if (memoryPointer === memorySize) {
+                memoryPointer = 0;
             }
-        })
-        .start();
+            fireCommandBullet(cmd, animateMemoryToTheLeft);
+            break;
+
+        case '<':
+            memoryPointer--;
+            if (memoryPointer < 0) {
+                memoryPointer = memorySize-1;
+            }
+            fireCommandBullet(cmd, animateMemoryToTheRight);
+            break;
+
+        case '+':
+            memory[memoryPointer] = ((memory[memoryPointer] || 0) + 1) & 255;
+            fireCommandBullet(cmd, animateMemoryValueChanged);
+            break;
+
+        case '-':
+            memory[memoryPointer] = ((memory[memoryPointer] || 0) - 1) & 255;
+            fireCommandBullet(cmd, animateMemoryValueChanged);
+            break;
+
+        case '[':
+            if (!memory[memoryPointer]) {
+                prevCodePointer = codePointer;
+
+                codePointer = loopOut[codePointer];
+
+                times = codePointer - prevCodePointer;
+
+                clearInterval(nextCommandInterval);
+                nextCommandInterval = null;
+                setIntervalLoop(animateProgramToTheLeft, 1000, times, startNextCommandLoop)
+
+            } else if (nextCommandInterval == null) {
+
+                startNextCommandLoop();
+            }
+            break;
+
+        case ']':
+            prevCodePointer = codePointer;
+
+            codePointer = loopIn[codePointer];
+
+            times = prevCodePointer - codePointer;
+
+            clearInterval(nextCommandInterval);
+            nextCommandInterval = null;
+            setIntervalLoop(animateProgramToTheRight, 1000, times, processCommand);
+            break;
+
+        case ',':
+            memory[memoryPointer] = input.charCodeAt(inputPointer++) || 0;
+            break;
+
+        case '.':
+            console.log(String.fromCharCode(memory[memoryPointer]));
+            break;
+    }
 }
 
 function fireCommandBullet(cmd, onCompleteCallback) {
@@ -776,6 +814,29 @@ function decrementMemoryCellNumWithWrap(cellNum) {
     return decrementCellNumWithWrap(cellNum, settings.memory.numCells);
 }
 
+function incrementProgramCellNumWithWrap(cellNum) {
+    return incrementCellNumWithWrap(cellNum, settings.program.numCells);
+}
+
+function decrementProgramCellNumWithWrap(cellNum) {
+    return decrementCellNumWithWrap(cellNum, settings.program.numCells);
+}
+
+function setIntervalLoop(fn, delay, times, onComplete) {
+    var counter = 0;
+    var i = setInterval(function () {
+        fn();
+
+        counter++;
+        if (counter === times) {
+            clearInterval(i);
+
+            onComplete();
+        }
+    }, delay);
+}
+
+
 function animateMemoryToTheLeft() {
 
     var rightMostCell = scene.getObjectByName("memoryCellGroup" + animState.memory.rightMostCellNum);
@@ -784,12 +845,11 @@ function animateMemoryToTheLeft() {
         // Setup the next memory cell ready to be scrolled into the memory view from the right
         animState.memory.leftMostCellNum = incrementMemoryCellNumWithWrap(animState.memory.leftMostCellNum);
         animState.memory.rightMostCellNum = incrementMemoryCellNumWithWrap(animState.memory.rightMostCellNum);
-        var nextCellNum = animState.memory.rightMostCellNum;
 
         animState.memory.leftMostCellPositionX += 55;
         animState.memory.rightMostCellPositionX += 55;
 
-        var nextCell = scene.getObjectByName("memoryCellGroup" + nextCellNum);
+        var nextCell = scene.getObjectByName("memoryCellGroup" + animState.memory.rightMostCellNum);
         var memoryText = nextCell.getObjectByName("memoryText");
 
         var nextShownMemoryPointer = (memoryPointer + (settings.memory.numCells / 2) - 1) % memorySize;
@@ -810,6 +870,79 @@ function animateMemoryToTheLeft() {
         .start();
 }
 
+function animateProgramToTheLeft(onCompleteFn) {
+
+    animState.program.codePointer++;
+
+    var rightMostCell = scene.getObjectByName("programCellGroup" + animState.program.rightMostCellNum);
+    if (animState.programGroupPosition.x + rightMostCell.position.x != animState.program.rightEndPositionX) {
+
+        // Setup the next program cell ready to be scrolled into the program view from the right
+        animState.program.leftMostCellNum = incrementProgramCellNumWithWrap(animState.program.leftMostCellNum);
+        animState.program.rightMostCellNum = incrementProgramCellNumWithWrap(animState.program.rightMostCellNum);
+
+        animState.program.leftMostCellPositionX += 55;
+        animState.program.rightMostCellPositionX += 55;
+
+        var nextCell = scene.getObjectByName("programCellGroup" + animState.program.rightMostCellNum);
+        var programText = nextCell.getObjectByName("programText");
+
+        var nextShownProgramPointer = animState.program.codePointer + (settings.program.numCells / 2) - 1;
+        var nextShownProgramValue = nextShownProgramPointer < codeSize ? code[nextShownProgramPointer] : "";
+
+        var newProgramText = createText( "programText", nextShownProgramValue, programTextMaterial );
+        nextCell.remove(programText);
+        nextCell.add(newProgramText);
+        nextCell.position.setX(animState.program.rightMostCellPositionX);
+    }
+
+    // Move program group
+    var programTween = new TWEEN.Tween( animState.programGroupPosition )
+        .to( { x: "-55" }, 500 )
+        .onUpdate( function () {
+            programGroup.position.setX(this.x);
+        } );
+    if (onCompleteFn) {
+        programTween.onComplete(onCompleteFn);
+    }
+    programTween.start();
+}
+
+function animateProgramToTheRight() {
+
+    animState.program.codePointer--;
+
+    var leftMostCell = scene.getObjectByName("programCellGroup" + animState.program.leftMostCellNum);
+    if (animState.programGroupPosition.x + leftMostCell.position.x != animState.program.leftEndPositionX) {
+
+        // Setup the next program cell ready to be scrolled into the program view from the right
+        animState.program.leftMostCellNum = decrementProgramCellNumWithWrap(animState.program.leftMostCellNum);
+        animState.program.rightMostCellNum = decrementProgramCellNumWithWrap(animState.program.rightMostCellNum);
+
+        animState.program.leftMostCellPositionX -= 55;
+        animState.program.rightMostCellPositionX -= 55;
+
+        var nextCell = scene.getObjectByName("programCellGroup" + animState.program.leftMostCellNum);
+        var programText = nextCell.getObjectByName("programText");
+
+        var nextShownProgramPointer = animState.program.codePointer - ((settings.program.numCells / 2) - 1);
+        var nextShownProgramValue = nextShownProgramPointer >= 0 ? code[nextShownProgramPointer] : "";
+
+        var newProgramText = createText( "programText", nextShownProgramValue, programTextMaterial );
+        nextCell.remove(programText);
+        nextCell.add(newProgramText);
+        nextCell.position.setX(animState.program.leftMostCellPositionX);
+    }
+
+    // Move program group
+    var programTween = new TWEEN.Tween( animState.programGroupPosition )
+        .to( { x: "+55" }, 500 )
+        .onUpdate( function () {
+            programGroup.position.setX(this.x);
+        } )
+        .start();
+}
+
 function debugMemory() {
     var msg = "";
     for (var i=0; i < settings.memory.numCells; i++) {
@@ -820,6 +953,15 @@ function debugMemory() {
     console.log("leftMostCellNum", animState.memory.leftMostCellNum, "currentCellNum", animState.memory.currentCellNum, "rightMostCellNum", animState.memory.rightMostCellNum);
 }
 
+function debugProgram() {
+    var msg = "";
+    for (var i=0; i < settings.program.numCells; i++) {
+        var cell = scene.getObjectByName("programCellGroup" + i);
+        msg += "[" + i + ":" + (cell.position.x + programGroup.position.x) + "]";
+    }
+    console.log(msg, "leftMostCellNum", animState.program.leftMostCellNum, "rightMostCellNum", animState.program.rightMostCellNum);
+}
+
 function animateMemoryToTheRight() {
 
     // Setup the next memory cell ready to be scrolled into the memory view from the left
@@ -828,12 +970,11 @@ function animateMemoryToTheRight() {
 
         animState.memory.leftMostCellNum = decrementMemoryCellNumWithWrap(animState.memory.leftMostCellNum);
         animState.memory.rightMostCellNum = decrementMemoryCellNumWithWrap(animState.memory.rightMostCellNum);
-        var nextCellNum = animState.memory.leftMostCellNum;
 
         animState.memory.leftMostCellPositionX -= 55;
         animState.memory.rightMostCellPositionX -= 55;
 
-        var nextCell = scene.getObjectByName("memoryCellGroup" + nextCellNum);
+        var nextCell = scene.getObjectByName("memoryCellGroup" + animState.memory.leftMostCellNum);
         var memoryText = nextCell.getObjectByName("memoryText");
 
         var nextShownMemoryPointer = (memoryPointer - (settings.memory.numCells / 2) - 1);
@@ -880,37 +1021,3 @@ function render() {
 
 // Brainfuck interpreter
 // Source: https://code.google.com/p/jslibs/wiki/JavascriptTips
-/*
- var code = '++++++++++[>+++++++>++++++++++>+++>+<<<<-]>++.>+.+++++++..+++.>++.<<+++++++++++++++.>.+++.------.--------.>+.>.';
- var inp = '23\n';
- var out = '';
-
- var codeSize = code.length;
- var i = 0, ip = 0, cp = 0, dp = 0, m = {};
-
- var loopIn = {}, loopOut = {};
- var tmp = [];
- for ( var cp = 0; cp < codeSize ; cp++ )
- if ( code[cp] == '[' )
- tmp.push(cp);
- else
- if ( code[cp] == ']' )
- loopOut[loopIn[cp] = tmp.pop()] = cp;
-
- for (var cp = 0; cp < codeSize && i < 100000; cp++, i++) {
-
- switch(code[cp]) {
-
- case '>': dp++; break;
- case '<': dp--; break;
- case '+': m[dp] = ((m[dp]||0)+1)&255; break
- case '-': m[dp] = ((m[dp]||0)-1)&255; break;
- case '.': out += String.fromCharCode(m[dp]); break;
- case ',': m[dp] = inp.charCodeAt(ip++)||0; break;
- case '[': m[dp]||(cp=loopOut[cp]); break;
- case ']': cp = loopIn[cp]-1; break;
- }
- }
- Print(out);
-
- */
