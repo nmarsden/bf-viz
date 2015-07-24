@@ -130,8 +130,6 @@ for (var cp = 0; cp < codeSize; cp++) {
 //    memory[n] = n;
 //}
 
-var nextCommandInterval;
-
 var animState = {
     commandBulletPosition: { z: -50 },
     programGroupPosition: { x: 0 },
@@ -157,6 +155,8 @@ var animState = {
         rightMostCellPositionX: 0
     }
 };
+
+var ANIM_TIME = 200;
 
 init();
 animate();
@@ -549,11 +549,7 @@ function init() {
     });
 
     // Start program
-    startNextCommandLoop();
-}
-
-function startNextCommandLoop() {
-    nextCommandInterval = setInterval(nextCommand, 3000);
+    nextCommand();
 }
 
 function setAllMaterialsNeedUpdate() {
@@ -699,7 +695,6 @@ function nextCommand() {
     codePointer++;
 
     if (codePointer === codeSize) {
-        clearInterval(nextCommandInterval);
         return;
     }
 
@@ -745,13 +740,11 @@ function processCommand() {
 
                 times = codePointer - prevCodePointer;
 
-                clearInterval(nextCommandInterval);
-                nextCommandInterval = null;
-                setIntervalLoop(animateProgramToTheLeft, 1000, times, startNextCommandLoop)
+                animateProgramToTheLeft(nextCommand, times);
 
-            } else if (nextCommandInterval == null) {
+            } else {
 
-                startNextCommandLoop();
+                nextCommand();
             }
             break;
 
@@ -762,17 +755,19 @@ function processCommand() {
 
             times = prevCodePointer - codePointer;
 
-            clearInterval(nextCommandInterval);
-            nextCommandInterval = null;
-            setIntervalLoop(animateProgramToTheRight, 1000, times, processCommand);
+            animateProgramToTheRight(processCommand, times);
             break;
 
         case ',':
             memory[memoryPointer] = input.charCodeAt(inputPointer++) || 0;
+
+            nextCommand();
             break;
 
         case '.':
             console.log(String.fromCharCode(memory[memoryPointer]));
+
+            nextCommand();
             break;
     }
 }
@@ -783,7 +778,7 @@ function fireCommandBullet(cmd, onCompleteCallback) {
     gunGroup.add(currentCommandText);
     animState.commandBulletPosition.z = -50;
     var bulletTween = new TWEEN.Tween( animState.commandBulletPosition )
-        .to( { z: -300 }, 1000 )
+        .to( { z: -300 }, ANIM_TIME )
         .onUpdate( function () {
             currentCommandText.position.setZ(this.z);
         } )
@@ -822,21 +817,6 @@ function decrementProgramCellNumWithWrap(cellNum) {
     return decrementCellNumWithWrap(cellNum, settings.program.numCells);
 }
 
-function setIntervalLoop(fn, delay, times, onComplete) {
-    var counter = 0;
-    var i = setInterval(function () {
-        fn();
-
-        counter++;
-        if (counter === times) {
-            clearInterval(i);
-
-            onComplete();
-        }
-    }, delay);
-}
-
-
 function animateMemoryToTheLeft() {
 
     var rightMostCell = scene.getObjectByName("memoryCellGroup" + animState.memory.rightMostCellNum);
@@ -863,14 +843,15 @@ function animateMemoryToTheLeft() {
 
     // Move memory group
     var memoryTween = new TWEEN.Tween( animState.memoryGroupPosition )
-        .to( { x: "-55" }, 500 )
+        .to( { x: "-55" }, ANIM_TIME )
         .onUpdate( function () {
             memoryGroup.position.setX(this.x);
         } )
+        .onComplete(nextCommand)
         .start();
 }
 
-function animateProgramToTheLeft(onCompleteFn) {
+function nextProgramCellLeft() {
 
     animState.program.codePointer++;
 
@@ -890,25 +871,49 @@ function animateProgramToTheLeft(onCompleteFn) {
         var nextShownProgramPointer = animState.program.codePointer + (settings.program.numCells / 2) - 1;
         var nextShownProgramValue = nextShownProgramPointer < codeSize ? code[nextShownProgramPointer] : "";
 
-        var newProgramText = createText( "programText", nextShownProgramValue, programTextMaterial );
+        var newProgramText = createText("programText", nextShownProgramValue, programTextMaterial);
         nextCell.remove(programText);
         nextCell.add(newProgramText);
         nextCell.position.setX(animState.program.rightMostCellPositionX);
     }
+}
 
-    // Move program group
+function createTweenAnimateProgramLeft() {
+
     var programTween = new TWEEN.Tween( animState.programGroupPosition )
-        .to( { x: "-55" }, 500 )
+        .to( { x: "-55" }, ANIM_TIME )
+        .onStart(nextProgramCellLeft)
         .onUpdate( function () {
             programGroup.position.setX(this.x);
         } );
-    if (onCompleteFn) {
-        programTween.onComplete(onCompleteFn);
-    }
-    programTween.start();
+    return programTween;
 }
 
-function animateProgramToTheRight() {
+function setupAndStartChainedTweens(createTweenFn, onCompleteFn, times) {
+
+    var tweens = {}, i, numTweens = times || 1;
+
+    // create tweens
+    for (i=0; i<numTweens; i++) {
+        tweens[i] = createTweenFn();
+    }
+    // chain tweens
+    for (i=1; i<numTweens; i++) {
+        tweens[i-1].chain(tweens[i]);
+    }
+
+    if (onCompleteFn) {
+        tweens[numTweens-1].onComplete(onCompleteFn);
+    }
+    tweens[0].start();
+}
+
+function animateProgramToTheLeft(onCompleteFn, times) {
+
+    setupAndStartChainedTweens(createTweenAnimateProgramLeft, onCompleteFn, times);
+}
+
+function nextProgramCellRight() {
 
     animState.program.codePointer--;
 
@@ -933,14 +938,21 @@ function animateProgramToTheRight() {
         nextCell.add(newProgramText);
         nextCell.position.setX(animState.program.leftMostCellPositionX);
     }
+}
 
-    // Move program group
+function createTweenAnimateProgramRight() {
     var programTween = new TWEEN.Tween( animState.programGroupPosition )
-        .to( { x: "+55" }, 500 )
+        .to( { x: "+55" }, ANIM_TIME )
+        .onStart(nextProgramCellRight)
         .onUpdate( function () {
             programGroup.position.setX(this.x);
-        } )
-        .start();
+        } );
+    return programTween;
+}
+
+function animateProgramToTheRight(onCompleteFn, times) {
+
+    setupAndStartChainedTweens(createTweenAnimateProgramRight, onCompleteFn, times);
 }
 
 function debugMemory() {
@@ -991,10 +1003,11 @@ function animateMemoryToTheRight() {
 
     // Move memory group
     var memoryTween = new TWEEN.Tween( animState.memoryGroupPosition )
-        .to( { x: "+55" }, 500 )
+        .to( { x: "+55" }, ANIM_TIME )
         .onUpdate( function () {
             memoryGroup.position.setX(this.x);
         } )
+        .onComplete(nextCommand)
         .start();
 }
 
@@ -1005,6 +1018,8 @@ function animateMemoryValueChanged() {
     var newMemText = createText( "memoryText", memory[memoryPointer], memoryTextMaterial );
     memCellGroup.remove(memText);
     memCellGroup.add(newMemText);
+
+    nextCommand();
 }
 
 function getMemoryValue(cellNum) {
