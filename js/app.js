@@ -10,7 +10,7 @@ var settings = {
         colour: "#3d4269"
     },
     memory: {
-        numCells: 20,
+        numCells: 30,
         cellColour: "#ffffff",
         cellOpacity: 0.12,
         textColour: "#d5de8d"
@@ -19,10 +19,16 @@ var settings = {
         colour: "#c07171"
     },
     program: {
-        numCells: 20,
+        numCells: 30,
         cellColour: "#ffffff",
         cellOpacity: 0.12,
         textColour: "#c07171"
+    },    
+    output: {
+        numCells: 30,
+        cellColour: "#ffffff",
+        cellOpacity: 0.12,
+        textColour: "#70b4f0"
     },
     scene: {
         rotation: {
@@ -69,6 +75,7 @@ var settings = {
         memory: true,
         gun: true,
         program: true,
+        output: true,
         helpers: false,
         directionLight: true,
         pointLight: true,
@@ -82,10 +89,11 @@ var fog;
 
 var floorMaterial, memBoxMaterial, memFrontTextMaterial, memSideTextMaterial, memoryTextMaterial, gunMaterial;
 var programBoxMaterial, programFrontTextMaterial, programSideTextMaterial, programTextMaterial;
+var outputBoxMaterial, outputFrontTextMaterial, outputSideTextMaterial, outputTextMaterial;
 
 var camera, cameraTarget, scene, renderer;
 
-var group, gunGroup, programGroup, memoryGroup;
+var group, gunGroup, programGroup, memoryGroup, outputGroup;
 
 var targetRotation = settings.scene.rotation.y;
 var targetRotationOnMouseDown = 0;
@@ -106,12 +114,17 @@ var inputPointer = 0;
 //var code = "+[--->++<]>++++..."; // Outputs: ZZZ
 //var code = "-[--->+<]>-------.>--[----->+<]>-.++++.+++."; // Outputs: Neil
 var code = '++++++++++[>+++++++>++++++++++>+++>+<<<<-]>++.>+.+++++++..+++.>++.<<+++++++++++++++.>.+++.------.--------.>+.>.'; // Outputs: Hello World!
+//var code = ',>,'; // Input two characters
+//var code = ',>,<.>.'; // Output two characters from input
+
 var codeSize = code.length;
 var codePointer = -1;
 
 var memory = {};
 var memorySize = 10000;
 var memoryPointer = 0;
+
+var output = '';
 
 // Init loopIn and loopOut
 var loopIn = {}, loopOut = {};
@@ -134,6 +147,7 @@ var animState = {
     commandBulletPosition: { z: -50 },
     programGroupPosition: { x: 0 },
     memoryGroupPosition: { x: 0 },
+    outputGroupPosition: { x: 0 },
     program: {
         leftEndPositionX: -55 * (settings.program.numCells / 2),
         rightEndPositionX: 55 * (settings.program.numCells / 2),
@@ -151,6 +165,16 @@ var animState = {
         leftMostCellNum: 0,
         rightMostCellNum: settings.memory.numCells-1,
         hiddenCellNum: settings.memory.numCells-1,
+        leftMostCellPositionX: 0,
+        rightMostCellPositionX: 0
+    },
+    output: {
+        leftEndPositionX: -55 * (settings.output.numCells / 2),
+        rightEndPositionX: 55 * (settings.output.numCells / 2),
+        currentCellNum: settings.output.numCells / 2,
+        leftMostCellNum: 0,
+        rightMostCellNum: settings.output.numCells-1,
+        hiddenCellNum: settings.output.numCells-1,
         leftMostCellPositionX: 0,
         rightMostCellPositionX: 0
     }
@@ -292,6 +316,47 @@ function init() {
     rightProgramEnd.position.setX(animState.program.rightEndPositionX);
     rightProgramEnd.position.setZ(300);
 
+    // OUTPUT
+
+    outputFrontTextMaterial = new THREE.MeshPhongMaterial( {
+        color: settings.output.textColour, shading: THREE.FlatShading } );
+    outputSideTextMaterial = new THREE.MeshPhongMaterial( {
+        color: settings.output.textColour, shading: THREE.SmoothShading } );
+    outputTextMaterial = new THREE.MeshFaceMaterial( [ outputFrontTextMaterial, outputSideTextMaterial ] );
+
+    outputBoxMaterial = new THREE.MeshPhongMaterial( {
+        color: settings.output.cellColour, opacity: settings.output.cellOpacity, transparent: true } );
+
+    outputGroup = new THREE.Group();
+
+    var outputCellOffset = (settings.output.numCells / 2);
+    animState.output.leftMostCellPositionX = 55 * (-outputCellOffset);
+    var outputCellGroup;
+    for (cellNum=0; cellNum<settings.output.numCells; cellNum++) {
+        outputCellGroup = new THREE.Group();
+        outputCellGroup.name = "outputCellGroup" + cellNum;
+        outputCellGroup.add( createText( "outputText", "", outputTextMaterial ) );
+        outputCellGroup.add( createBox( outputBoxMaterial ) );
+        outputCellGroup.position.x = 55 * (cellNum - outputCellOffset);
+
+        outputGroup.add(outputCellGroup);
+    }
+    animState.output.rightMostCellPositionX = outputCellGroup.position.x;
+
+    outputGroup.position.x = 0;
+    outputGroup.position.y = 175;
+
+    // OUTPUT ENDS
+
+    var outputBoxEndsMaterial = new THREE.MeshPhongMaterial( {
+        color: settings.output.cellColour } );
+    var leftOutputEnd = createBox( outputBoxEndsMaterial );
+    leftOutputEnd.position.setX(animState.output.leftEndPositionX);
+    leftOutputEnd.position.setY(200);
+    var rightOutputEnd = createBox( outputBoxEndsMaterial );
+    rightOutputEnd.position.setX(animState.output.rightEndPositionX);
+    rightOutputEnd.position.setY(200);
+
     // COMMAND TEXT
 
     var numCommands = commands.length;
@@ -324,7 +389,10 @@ function init() {
     group.add(gunGroup);
     group.add(leftProgramEnd);
     group.add(programGroup);
-    group.add(rightProgramEnd);
+    group.add(rightProgramEnd);    
+    group.add(leftOutputEnd);
+    group.add(outputGroup);
+    group.add(rightOutputEnd);
     scene.add( group );
 
     // HELPERS
@@ -452,6 +520,18 @@ function init() {
         programSideTextMaterial.color.setStyle(value);
     });
 
+    var outputFolder = gui.addFolder("Output");
+    outputFolder.addColor(settings.output, 'cellColour').name("cell colour").onChange(function(value){
+        outputBoxMaterial.color.setStyle(value);
+    });
+    outputFolder.add(settings.output, 'cellOpacity', 0, 1).name("cell opacity").onChange(function(value){
+        outputBoxMaterial.opacity = value;
+    });
+    outputFolder.addColor(settings.output, 'textColour').name("text colour").onChange(function(value){
+        outputFrontTextMaterial.color.setStyle(value);
+        outputSideTextMaterial.color.setStyle(value);
+    });
+
     var gunFolder = gui.addFolder("Gun");
     gunFolder.addColor(settings.gun, 'colour').onChange(function(value){
         gunMaterial.color.setStyle(value);
@@ -498,13 +578,22 @@ function init() {
         floor.visible = value;
     });
     renderFolder.add(settings.render, 'memory').onChange(function(value){
+        leftMemEnd.visible = value;
         memoryGroup.visible = value;
+        rightMemEnd.visible = value;
     });
     renderFolder.add(settings.render, 'gun').onChange(function(value){
         gunGroup.visible = value;
     });
     renderFolder.add(settings.render, 'program').onChange(function(value){
+        leftProgramEnd.visible = value;
         programGroup.visible = value;
+        rightProgramEnd.visible = value;
+    });
+    renderFolder.add(settings.render, 'output').onChange(function(value){
+        leftOutputEnd.visible = value;
+        outputGroup.visible = value;
+        rightOutputEnd.visible = value;
     });
     renderFolder.add(settings.render, 'helpers').onChange(function(value){
         cameraHelper.visible = value;
@@ -561,6 +650,9 @@ function setAllMaterialsNeedUpdate() {
     programBoxMaterial.needsUpdate = true;
     programFrontTextMaterial.needsUpdate = true;
     programSideTextMaterial.needsUpdate = true;
+    outputBoxMaterial.needsUpdate = true;
+    outputFrontTextMaterial.needsUpdate = true;
+    outputSideTextMaterial.needsUpdate = true;
 }
 
 function createPlane(material) {
@@ -761,13 +853,13 @@ function processCommand() {
         case ',':
             memory[memoryPointer] = input.charCodeAt(inputPointer++) || 0;
 
-            nextCommand();
+            fireCommandBullet(cmd, animateMemoryValueChanged);
             break;
 
         case '.':
-            console.log(String.fromCharCode(memory[memoryPointer]));
-
-            nextCommand();
+            output += String.fromCharCode(memory[memoryPointer]);
+            
+            fireCommandBullet(cmd, animateNewOutputValue);
             break;
     }
 }
@@ -815,6 +907,10 @@ function incrementProgramCellNumWithWrap(cellNum) {
 
 function decrementProgramCellNumWithWrap(cellNum) {
     return decrementCellNumWithWrap(cellNum, settings.program.numCells);
+}
+
+function incrementOutputCellNumWithWrap(cellNum) {
+    return incrementCellNumWithWrap(cellNum, settings.output.numCells);
 }
 
 function animateMemoryToTheLeft() {
@@ -1020,6 +1116,49 @@ function animateMemoryValueChanged() {
     memCellGroup.add(newMemText);
 
     nextCommand();
+}
+
+function animateOutputToTheLeft() {
+
+    var rightMostCell = scene.getObjectByName("outputCellGroup" + animState.output.rightMostCellNum);
+    if (animState.outputGroupPosition.x + rightMostCell.position.x != animState.output.rightEndPositionX) {
+
+        // Setup the next output cell ready to be scrolled into the output view from the right
+        animState.output.leftMostCellNum = incrementOutputCellNumWithWrap(animState.output.leftMostCellNum);
+        animState.output.rightMostCellNum = incrementOutputCellNumWithWrap(animState.output.rightMostCellNum);
+
+        animState.output.leftMostCellPositionX += 55;
+        animState.output.rightMostCellPositionX += 55;
+
+        var nextCell = scene.getObjectByName("outputCellGroup" + animState.output.rightMostCellNum);
+        var outputText = nextCell.getObjectByName("outputText");
+
+        var newOutputText = createText( "outputText", "", outputTextMaterial );
+        nextCell.remove(outputText);
+        nextCell.add(newOutputText);
+        nextCell.position.setX(animState.output.rightMostCellPositionX);
+    }
+    animState.output.currentCellNum = incrementOutputCellNumWithWrap(animState.output.currentCellNum);
+
+    // Move output group
+    var outputTween = new TWEEN.Tween( animState.outputGroupPosition )
+        .to( { x: "-55" }, ANIM_TIME )
+        .onUpdate( function () {
+            outputGroup.position.setX(this.x);
+        } )
+        .onComplete(nextCommand)
+        .start();
+}
+
+function animateNewOutputValue() {
+    var outputCellGroup = scene.getObjectByName("outputCellGroup" + animState.output.currentCellNum);
+    var outputText = outputCellGroup.getObjectByName("outputText");
+
+    var newOutputText = createText( "outputText", output[output.length-1], outputTextMaterial );
+    outputCellGroup.remove(outputText);
+    outputCellGroup.add(newOutputText);
+
+    animateOutputToTheLeft();
 }
 
 function getMemoryValue(cellNum) {
