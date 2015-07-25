@@ -3,8 +3,8 @@ if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
 var settings = {
     fog: {
         colour: "#dedede",
-        near: 450,
-        far: 1400
+        near: 925,
+        far: 2000
     },
     floor: {
         colour: "#3d4269"
@@ -66,12 +66,12 @@ var settings = {
     camera: {
         position: {
             x: 0,
-            y: 500,
-            z: 1000
+            y: 290,
+            z: 1300
         },
         target: {
             x: 0,
-            y: 20,
+            y: 280,
             z: 0
         }
     },
@@ -116,7 +116,10 @@ var commands = [ '>', '<', '+', '-', '.', ',', '[', ']' ];
 var commandTexts = {};
 var currentCommandText;
 
-var input = 'ECHO';
+var input = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+//var input = '-=!@#$%^&*()_+,.<>?[]\\{}|;\':"`~';
+//var input = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890-=!@#$%^&*()_+,.<>?[]\\{}|;\':"`~';
+//var input = 'ECHO';
 var inputPointer = 0;
 
 //var code = "+[--->++<]>++++..."; // Outputs: ZZZ
@@ -196,7 +199,8 @@ var animState = {
         rightMostCellNum: settings.input.numCells-1,
         hiddenCellNum: settings.input.numCells-1,
         leftMostCellPositionX: 0,
-        rightMostCellPositionX: 0
+        rightMostCellPositionX: 0,
+        inputPointer: inputPointer
     }
 };
 
@@ -283,14 +287,18 @@ function init() {
     }
     animState.memory.rightMostCellPositionX = memoryCellGroup.position.x;
 
+    memoryGroup.position.y = 350;
+
     // MEMORY ENDS
 
     var memBoxEndsMaterial = new THREE.MeshPhongMaterial( {
         color: settings.memory.cellColour } );
     var leftMemEnd = createBox( memBoxEndsMaterial );
     leftMemEnd.position.setX(animState.memory.leftEndPositionX);
+    leftMemEnd.position.setY(375);
     var rightMemEnd = createBox( memBoxEndsMaterial );
     rightMemEnd.position.setX(animState.memory.rightEndPositionX);
+    rightMemEnd.position.setY(375);
 
     // PROGRAM
 
@@ -322,8 +330,9 @@ function init() {
     }
     animState.program.rightMostCellPositionX = programCellGroup.position.x;
 
-    programGroup.position.z = 300;
+    programGroup.position.z = 0;
     programGroup.position.x = 0;
+    programGroup.position.y = 175;
 
     // PROGRAM ENDS
 
@@ -331,10 +340,12 @@ function init() {
         color: settings.program.cellColour } );
     var leftProgramEnd = createBox( programBoxEndsMaterial );
     leftProgramEnd.position.setX(animState.program.leftEndPositionX);
-    leftProgramEnd.position.setZ(300);
+    leftProgramEnd.position.setZ(0);
+    leftProgramEnd.position.setY(200);
     var rightProgramEnd = createBox( programBoxEndsMaterial );
     rightProgramEnd.position.setX(animState.program.rightEndPositionX);
-    rightProgramEnd.position.setZ(300);
+    rightProgramEnd.position.setZ(0);
+    rightProgramEnd.position.setY(200);
 
     // OUTPUT
 
@@ -364,7 +375,7 @@ function init() {
     animState.output.rightMostCellPositionX = outputCellGroup.position.x;
 
     outputGroup.position.x = 0;
-    outputGroup.position.y = 175;
+    outputGroup.position.y = 525;
 
     // OUTPUT ENDS
 
@@ -372,10 +383,10 @@ function init() {
         color: settings.output.cellColour } );
     var leftOutputEnd = createBox( outputBoxEndsMaterial );
     leftOutputEnd.position.setX(animState.output.leftEndPositionX);
-    leftOutputEnd.position.setY(200);
+    leftOutputEnd.position.setY(550);
     var rightOutputEnd = createBox( outputBoxEndsMaterial );
     rightOutputEnd.position.setX(animState.output.rightEndPositionX);
-    rightOutputEnd.position.setY(200);
+    rightOutputEnd.position.setY(550);
 
     // INPUT
 
@@ -407,7 +418,7 @@ function init() {
     animState.input.rightMostCellPositionX = inputCellGroup.position.x;
 
     inputGroup.position.x = 0;
-    inputGroup.position.y = -175;
+    inputGroup.position.y = 0;
 
     // INPUT ENDS
 
@@ -415,10 +426,10 @@ function init() {
         color: settings.input.cellColour } );
     var leftInputEnd = createBox( inputBoxEndsMaterial );
     leftInputEnd.position.setX(animState.input.leftEndPositionX);
-    leftInputEnd.position.setY(-150);
+    leftInputEnd.position.setY(25);
     var rightInputEnd = createBox( inputBoxEndsMaterial );
     rightInputEnd.position.setX(animState.input.rightEndPositionX);
-    rightInputEnd.position.setY(-150);
+    rightInputEnd.position.setY(25);
 
     // COMMAND TEXT
 
@@ -426,7 +437,7 @@ function init() {
     for (var i=0; i<numCommands; i++) {
         var cmd = commands[i];
         var cmdText = createText( "cmdText_" + cmd, cmd, programTextMaterial );
-        cmdText.position.z = -50;
+        cmdText.position.y = 60;
         commandTexts[cmd] = cmdText;
     }
 
@@ -440,7 +451,8 @@ function init() {
 
     gunGroup.add( gunBox );
     gunGroup.add( gunBarrel );
-    gunGroup.position.z = 300;
+    gunGroup.position.z = 0;
+    gunGroup.position.y = 170;
 
     // GROUP
 
@@ -807,10 +819,10 @@ function createGunBox(material) {
 
 function createGunBarrel(material) {
 
-    var geometry = new THREE.BoxGeometry( 10, 10, 20 );
+    var geometry = new THREE.BoxGeometry( 10, 20, 10 );
     var box = new THREE.Mesh( geometry, material );
-    box.position.y = 25;
-    box.position.z = -25;
+    box.position.y = 50;
+    box.position.z = 0;
     return box;
 }
 
@@ -959,13 +971,13 @@ function processCommand() {
 
 function fireCommandBullet(cmd, onCompleteCallback) {
     currentCommandText = commandTexts[cmd];
-    currentCommandText.position.setZ(-50);
+    currentCommandText.position.setY(60);
     gunGroup.add(currentCommandText);
-    animState.commandBulletPosition.z = -50;
+    animState.commandBulletPosition.y = 60;
     var bulletTween = new TWEEN.Tween( animState.commandBulletPosition )
-        .to( { z: -300 }, ANIM_TIME )
+        .to( { y: 175 }, ANIM_TIME )
         .onUpdate( function () {
-            currentCommandText.position.setZ(this.z);
+            currentCommandText.position.setY(this.y);
         } )
         .onComplete( function () {
             gunGroup.remove(currentCommandText);
@@ -1263,6 +1275,8 @@ function animateNewOutputValue() {
 
 function animateInputToTheLeft() {
 
+    animState.input.inputPointer++;
+
     var rightMostCell = scene.getObjectByName("inputCellGroup" + animState.input.rightMostCellNum);
     if (animState.inputGroupPosition.x + rightMostCell.position.x != animState.input.rightEndPositionX) {
 
@@ -1276,7 +1290,10 @@ function animateInputToTheLeft() {
         var nextCell = scene.getObjectByName("inputCellGroup" + animState.input.rightMostCellNum);
         var inputText = nextCell.getObjectByName("inputText");
 
-        var newInputText = createText( "inputText", "", inputTextMaterial );
+        var nextShownInputPointer = animState.input.inputPointer + (settings.input.numCells / 2) - 1;
+        var nextShownInputValue = nextShownInputPointer < input.length ? input[nextShownInputPointer] : "";
+
+        var newInputText = createText( "inputText", nextShownInputValue, inputTextMaterial );
         nextCell.remove(inputText);
         nextCell.add(newInputText);
         nextCell.position.setX(animState.input.rightMostCellPositionX);
