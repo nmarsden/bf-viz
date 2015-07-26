@@ -2,7 +2,7 @@ if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
 
 var settings = {
     fog: {
-        colour: "#dedede",
+        colour: "#141414",
         near: 925,
         far: 2000
     },
@@ -10,7 +10,7 @@ var settings = {
         colour: "#3d4269"
     },
     memory: {
-        numCells: 30,
+        numCells: 24,
         cellColour: "#ffffff",
         cellOpacity: 0.12,
         textColour: "#d5de8d"
@@ -19,22 +19,25 @@ var settings = {
         colour: "#c07171"
     },
     program: {
-        numCells: 30,
+        numCells: 24,
         cellColour: "#ffffff",
         cellOpacity: 0.12,
         textColour: "#c07171"
     },    
     output: {
-        numCells: 30,
+        numCells: 24,
         cellColour: "#ffffff",
         cellOpacity: 0.12,
         textColour: "#70b4f0"
     },
     input: {
-        numCells: 30,
+        numCells: 24,
         cellColour: "#ffffff",
         cellOpacity: 0.12,
         textColour: "#70f08e"
+    },
+    labels: {
+        textColour: "#ffffff"
     },
     scene: {
         rotation: {
@@ -59,19 +62,19 @@ var settings = {
         distance: 0,
         position: {
             x: 0,
-            y: 100,
-            z: 90
+            y: 290,
+            z: 190
         }
     },
     camera: {
         position: {
             x: 0,
             y: 290,
-            z: 1300
+            z: 1500
         },
         target: {
             x: 0,
-            y: 280,
+            y: 290,
             z: 0
         }
     },
@@ -83,6 +86,7 @@ var settings = {
         program: true,
         output: true,
         input: true,
+        labels: true,
         helpers: false,
         directionLight: true,
         pointLight: true,
@@ -102,6 +106,7 @@ var inputBoxMaterial, inputFrontTextMaterial, inputSideTextMaterial, inputTextMa
 var camera, cameraTarget, scene, renderer;
 
 var group, gunGroup, programGroup, memoryGroup, outputGroup, inputGroup;
+var inputLabel, programLabel, memoryLabel, outputLabel;
 
 var targetRotation = settings.scene.rotation.y;
 var targetRotationOnMouseDown = 0;
@@ -225,6 +230,8 @@ function init() {
     fog = new THREE.Fog( settings.fog.colour, settings.fog.near, settings.fog.far );
 
     scene = new THREE.Scene();
+    scene.position.y = -20;
+
     if (settings.render.fog) {
         scene.fog = fog;
     }
@@ -246,6 +253,14 @@ function init() {
         scene.add(ambientLight);
     }
 
+    // LABEL MATERIALS
+
+    var labelFrontTextMaterial = new THREE.MeshPhongMaterial( {
+        color: settings.labels.textColour, shading: THREE.FlatShading } );
+    var labelSideTextMaterial = new THREE.MeshPhongMaterial( {
+        color: settings.labels.textColour, shading: THREE.SmoothShading } );
+    var labelTextMaterial = new THREE.MeshFaceMaterial( [ labelFrontTextMaterial, labelSideTextMaterial ] );
+
     // FLOOR
 
     floorMaterial = new THREE.MeshBasicMaterial( {
@@ -254,6 +269,14 @@ function init() {
     var floor = createPlane(floorMaterial);
     floor.visible = settings.render.floor;
 
+    // MEMORY LABEL
+
+    var memoryLabelMaterial = new THREE.MeshPhongMaterial( {
+        color: settings.memory.textColour } );
+    memoryLabel = createLabel( memoryLabelMaterial, labelTextMaterial, "MEMORY" );
+    memoryLabel.position.x = animState.memory.leftEndPositionX + 100;
+    memoryLabel.position.y = 410;
+    
     // MEMORY
 
     memFrontTextMaterial = new THREE.MeshPhongMaterial( {
@@ -292,13 +315,21 @@ function init() {
     // MEMORY ENDS
 
     var memBoxEndsMaterial = new THREE.MeshPhongMaterial( {
-        color: settings.memory.cellColour } );
+        color: settings.memory.textColour } );
     var leftMemEnd = createBox( memBoxEndsMaterial );
     leftMemEnd.position.setX(animState.memory.leftEndPositionX);
     leftMemEnd.position.setY(375);
     var rightMemEnd = createBox( memBoxEndsMaterial );
     rightMemEnd.position.setX(animState.memory.rightEndPositionX);
     rightMemEnd.position.setY(375);
+
+    // PROGRAM LABEL
+
+    var programLabelMaterial = new THREE.MeshPhongMaterial( {
+        color: settings.program.textColour } );
+    programLabel = createLabel( programLabelMaterial, labelTextMaterial, "PROGRAM" );
+    programLabel.position.x = animState.program.leftEndPositionX + 100;
+    programLabel.position.y = 235;
 
     // PROGRAM
 
@@ -337,7 +368,7 @@ function init() {
     // PROGRAM ENDS
 
     var programBoxEndsMaterial = new THREE.MeshPhongMaterial( {
-        color: settings.program.cellColour } );
+        color: settings.program.textColour } );
     var leftProgramEnd = createBox( programBoxEndsMaterial );
     leftProgramEnd.position.setX(animState.program.leftEndPositionX);
     leftProgramEnd.position.setZ(0);
@@ -347,6 +378,14 @@ function init() {
     rightProgramEnd.position.setZ(0);
     rightProgramEnd.position.setY(200);
 
+    // OUTPUT LABEL
+
+    var outputLabelMaterial = new THREE.MeshPhongMaterial( {
+        color: settings.output.textColour } );
+    outputLabel = createLabel( outputLabelMaterial, labelTextMaterial, "OUTPUT" );
+    outputLabel.position.x = animState.output.leftEndPositionX + 100;
+    outputLabel.position.y = 585;
+    
     // OUTPUT
 
     outputFrontTextMaterial = new THREE.MeshPhongMaterial( {
@@ -380,13 +419,21 @@ function init() {
     // OUTPUT ENDS
 
     var outputBoxEndsMaterial = new THREE.MeshPhongMaterial( {
-        color: settings.output.cellColour } );
+        color: settings.output.textColour } );
     var leftOutputEnd = createBox( outputBoxEndsMaterial );
     leftOutputEnd.position.setX(animState.output.leftEndPositionX);
     leftOutputEnd.position.setY(550);
     var rightOutputEnd = createBox( outputBoxEndsMaterial );
     rightOutputEnd.position.setX(animState.output.rightEndPositionX);
     rightOutputEnd.position.setY(550);
+
+    // INPUT LABEL
+
+    var inputLabelMaterial = new THREE.MeshPhongMaterial( {
+        color: settings.input.textColour } );
+    inputLabel = createLabel( inputLabelMaterial, labelTextMaterial, "INPUT" );
+    inputLabel.position.x = animState.input.leftEndPositionX + 100;
+    inputLabel.position.y = 55;
 
     // INPUT
 
@@ -423,7 +470,7 @@ function init() {
     // INPUT ENDS
 
     var inputBoxEndsMaterial = new THREE.MeshPhongMaterial( {
-        color: settings.input.cellColour } );
+        color: settings.input.textColour } );
     var leftInputEnd = createBox( inputBoxEndsMaterial );
     leftInputEnd.position.setX(animState.input.leftEndPositionX);
     leftInputEnd.position.setY(25);
@@ -458,19 +505,29 @@ function init() {
 
     group = new THREE.Group();
     group.add(floor);
+
+    group.add(memoryLabel);
     group.add(leftMemEnd);
     group.add(memoryGroup);
     group.add(rightMemEnd);
+
     group.add(gunGroup);
+
+    group.add(programLabel);
     group.add(leftProgramEnd);
     group.add(programGroup);
-    group.add(rightProgramEnd);    
+    group.add(rightProgramEnd);
+
+    group.add(outputLabel);
     group.add(leftOutputEnd);
     group.add(outputGroup);
-    group.add(rightOutputEnd);    
+    group.add(rightOutputEnd);
+
+    group.add(inputLabel);
     group.add(leftInputEnd);
     group.add(inputGroup);
     group.add(rightInputEnd);
+
     scene.add( group );
 
     // HELPERS
@@ -495,7 +552,7 @@ function init() {
     renderer.setClearColor( settings.fog.colour );
     renderer.setPixelRatio( window.devicePixelRatio );
     renderer.setSize( window.innerWidth, window.innerHeight );
-    renderer.sortObjects = false;
+    renderer.sortObjects = true;
     container.appendChild( renderer.domElement );
 
     // STATS
@@ -622,6 +679,12 @@ function init() {
         inputSideTextMaterial.color.setStyle(value);
     });
 
+    var labelsFolder = gui.addFolder("Labels");
+    labelsFolder.addColor(settings.labels, 'textColour').name("text colour").onChange(function(value){
+        labelFrontTextMaterial.color.setStyle(value);
+        labelSideTextMaterial.color.setStyle(value);
+    });
+
     var gunFolder = gui.addFolder("Gun");
     gunFolder.addColor(settings.gun, 'colour').onChange(function(value){
         gunMaterial.color.setStyle(value);
@@ -641,7 +704,7 @@ function init() {
     cameraPositionFolder.add(settings.camera.position, 'y', -1000, 1000).onChange(function(value){
         camera.position.setY(value);
     });
-    cameraPositionFolder.add(settings.camera.position, 'z', -1300, 1300).onChange(function(value){
+    cameraPositionFolder.add(settings.camera.position, 'z', 500, 2000).onChange(function(value){
         camera.position.setZ(value);
     });
     var cameraTargetFolder = cameraFolder.addFolder("Target");
@@ -689,6 +752,12 @@ function init() {
         leftInputEnd.visible = value;
         inputGroup.visible = value;
         rightInputEnd.visible = value;
+    });
+    renderFolder.add(settings.render, 'labels').onChange(function(value){
+        outputLabel.visible = value;
+        memoryLabel.visible = value;
+        programLabel.visible = value;
+        inputLabel.visible = value;
     });
     renderFolder.add(settings.render, 'helpers').onChange(function(value){
         cameraHelper.visible = value;
@@ -751,6 +820,20 @@ function setAllMaterialsNeedUpdate() {
     inputBoxMaterial.needsUpdate = true;
     inputFrontTextMaterial.needsUpdate = true;
     inputSideTextMaterial.needsUpdate = true;
+}
+
+function createLabel(boxMaterial, textMaterial, text) {
+    var geometry = new THREE.BoxGeometry( 250, 50, 10 );
+    var labelBox = new THREE.Mesh( geometry, boxMaterial );
+    labelBox.position.y = 25;
+    var labelText = createText( "labelText", text, textMaterial );
+    labelText.position.y = 17;
+
+    var labelGroup = new THREE.Group();
+    labelGroup.position.x = -400;
+    labelGroup.add(labelBox);
+    labelGroup.add(labelText);
+    return labelGroup;
 }
 
 function createPlane(material) {
