@@ -316,10 +316,10 @@ function init() {
 
     var memBoxEndsMaterial = new THREE.MeshPhongMaterial( {
         color: settings.memory.textColour } );
-    var leftMemEnd = createBox( memBoxEndsMaterial );
+    var leftMemEnd = createEndCell( memBoxEndsMaterial );
     leftMemEnd.position.setX(animState.memory.leftEndPositionX);
     leftMemEnd.position.setY(375);
-    var rightMemEnd = createBox( memBoxEndsMaterial );
+    var rightMemEnd = createEndCell( memBoxEndsMaterial );
     rightMemEnd.position.setX(animState.memory.rightEndPositionX);
     rightMemEnd.position.setY(375);
 
@@ -369,11 +369,11 @@ function init() {
 
     var programBoxEndsMaterial = new THREE.MeshPhongMaterial( {
         color: settings.program.textColour } );
-    var leftProgramEnd = createBox( programBoxEndsMaterial );
+    var leftProgramEnd = createEndCell( programBoxEndsMaterial );
     leftProgramEnd.position.setX(animState.program.leftEndPositionX);
     leftProgramEnd.position.setZ(0);
     leftProgramEnd.position.setY(200);
-    var rightProgramEnd = createBox( programBoxEndsMaterial );
+    var rightProgramEnd = createEndCell( programBoxEndsMaterial );
     rightProgramEnd.position.setX(animState.program.rightEndPositionX);
     rightProgramEnd.position.setZ(0);
     rightProgramEnd.position.setY(200);
@@ -420,10 +420,10 @@ function init() {
 
     var outputBoxEndsMaterial = new THREE.MeshPhongMaterial( {
         color: settings.output.textColour } );
-    var leftOutputEnd = createBox( outputBoxEndsMaterial );
+    var leftOutputEnd = createEndCell( outputBoxEndsMaterial );
     leftOutputEnd.position.setX(animState.output.leftEndPositionX);
     leftOutputEnd.position.setY(550);
-    var rightOutputEnd = createBox( outputBoxEndsMaterial );
+    var rightOutputEnd = createEndCell( outputBoxEndsMaterial );
     rightOutputEnd.position.setX(animState.output.rightEndPositionX);
     rightOutputEnd.position.setY(550);
 
@@ -471,10 +471,10 @@ function init() {
 
     var inputBoxEndsMaterial = new THREE.MeshPhongMaterial( {
         color: settings.input.textColour } );
-    var leftInputEnd = createBox( inputBoxEndsMaterial );
+    var leftInputEnd = createEndCell( inputBoxEndsMaterial );
     leftInputEnd.position.setX(animState.input.leftEndPositionX);
     leftInputEnd.position.setY(25);
-    var rightInputEnd = createBox( inputBoxEndsMaterial );
+    var rightInputEnd = createEndCell( inputBoxEndsMaterial );
     rightInputEnd.position.setX(animState.input.rightEndPositionX);
     rightInputEnd.position.setY(25);
 
@@ -889,6 +889,14 @@ function createBox(material) {
     var geometry = new THREE.BoxGeometry( 50, 50, 50 );
     var box = new THREE.Mesh( geometry, material );
     box.position.y = 25;
+    return box;
+}
+
+function createEndCell(material) {
+
+    var geometry = new THREE.BoxGeometry( 52, 52, 52 );
+    var box = new THREE.Mesh( geometry, material );
+    box.position.y = 26;
     return box;
 }
 
