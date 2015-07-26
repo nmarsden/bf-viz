@@ -143,78 +143,235 @@ var memoryPointer = 0;
 
 var output = '';
 
-// Init loopIn and loopOut
 var loopIn = {}, loopOut = {};
-var tmp = [];
-for (var cp = 0; cp < codeSize; cp++) {
-    if (code[cp] == '[') {
-        tmp.push(cp);
-    }
-    else if (code[cp] == ']') {
-        loopOut[loopIn[cp] = tmp.pop()] = cp;
-    }
-}
 
 // Init DEBUG memory
 //for (var n=0; n<memorySize; n++) {
 //    memory[n] = n;
 //}
 
-var animState = {
-    commandBulletPosition: { z: -50 },
-    programGroupPosition: { x: 0 },
-    memoryGroupPosition: { x: 0 },
-    outputGroupPosition: { x: 0 },
-    inputGroupPosition: { x: 0 },
-    program: {
-        leftEndPositionX: -55 * (settings.program.numCells / 2),
-        rightEndPositionX: 55 * (settings.program.numCells / 2),
-        leftMostCellNum: 0,
-        rightMostCellNum: settings.program.numCells-1,
-        hiddenCellNum: settings.program.numCells-1,
-        leftMostCellPositionX: 0,
-        rightMostCellPositionX: 0,
-        codePointer: codePointer
-    },
-    memory: {
-        leftEndPositionX: -55 * (settings.memory.numCells / 2),
-        rightEndPositionX: 55 * (settings.memory.numCells / 2),
-        currentCellNum: settings.memory.numCells / 2,
-        leftMostCellNum: 0,
-        rightMostCellNum: settings.memory.numCells-1,
-        hiddenCellNum: settings.memory.numCells-1,
-        leftMostCellPositionX: 0,
-        rightMostCellPositionX: 0
-    },
-    output: {
-        leftEndPositionX: -55 * (settings.output.numCells / 2),
-        rightEndPositionX: 55 * (settings.output.numCells / 2),
-        currentCellNum: settings.output.numCells / 2,
-        leftMostCellNum: 0,
-        rightMostCellNum: settings.output.numCells-1,
-        hiddenCellNum: settings.output.numCells-1,
-        leftMostCellPositionX: 0,
-        rightMostCellPositionX: 0
-    },
-    input: {
-        leftEndPositionX: -55 * (settings.input.numCells / 2),
-        rightEndPositionX: 55 * (settings.input.numCells / 2),
-        currentCellNum: settings.input.numCells / 2,
-        leftMostCellNum: 0,
-        rightMostCellNum: settings.input.numCells-1,
-        hiddenCellNum: settings.input.numCells-1,
-        leftMostCellPositionX: 0,
-        rightMostCellPositionX: 0,
-        inputPointer: inputPointer
-    }
-};
+var animState;
+var ANIM_TIME = 500;
 
-var ANIM_TIME = 200;
+var settingsContainer, programElement, inputElement;
 
 init();
 animate();
 
+function resetProgramState() {
+    inputPointer = 0;
+    codeSize = code.length;
+    codePointer = -1;
+
+    memory = {};
+    memoryPointer = 0;
+
+    output = '';
+
+    loopIn = {};
+    loopOut = {};
+
+    // Init loopIn and loopOut
+    var tmp = [];
+    for (var cp = 0; cp < codeSize; cp++) {
+        if (code[cp] == '[') {
+            tmp.push(cp);
+        }
+        else if (code[cp] == ']') {
+            loopOut[loopIn[cp] = tmp.pop()] = cp;
+        }
+    }
+}
+
+function resetOutputCells() {
+    var outputCellOffset = (settings.output.numCells / 2);
+    animState.output.leftMostCellPositionX = 55 * (-outputCellOffset);
+    var outputCellGroup;
+    for (var cellNum=0; cellNum<settings.output.numCells; cellNum++) {
+        outputCellGroup = scene.getObjectByName("outputCellGroup" + cellNum);
+        var outputText = outputCellGroup.getObjectByName("outputText");
+        var newOutputText = createText( "outputText", "", outputTextMaterial );
+        outputCellGroup.remove(outputText);
+        outputCellGroup.add(newOutputText);
+        outputCellGroup.position.x = 55 * (cellNum - outputCellOffset);
+    }
+    animState.output.rightMostCellPositionX = outputCellGroup.position.x;
+
+    outputGroup.position.x = 0;
+}
+
+function resetMemoryCells() {
+    var memoryPointerOffset = (settings.memory.numCells / 2);
+    var memoryCellOffset = (settings.memory.numCells / 2);
+    animState.memory.leftMostCellPositionX = 55 * (-memoryCellOffset);
+
+    var memoryCellGroup;
+    for (var cellNum=0; cellNum<settings.memory.numCells; cellNum++) {
+        var memPointer = cellNum - memoryPointerOffset;
+        if (memPointer < 0) {
+            memPointer = memorySize + memPointer;
+        }
+        memoryCellGroup = scene.getObjectByName("memoryCellGroup" + cellNum);
+        var memoryText = memoryCellGroup.getObjectByName("memoryText");
+        var newMemoryText = createText( "memoryText", getMemoryValue(memPointer)+"", memoryTextMaterial );
+        memoryCellGroup.remove(memoryText);
+        memoryCellGroup.add(newMemoryText);
+        memoryCellGroup.position.x = 55 * (cellNum -  memoryCellOffset);
+    }
+    animState.memory.rightMostCellPositionX = memoryCellGroup.position.x;
+
+    memoryGroup.position.x = 0;
+}
+
+function resetProgramCells() {
+    var programPointerOffset = (settings.program.numCells / 2) + 1;
+    var programCellOffset = (settings.program.numCells / 2);
+    animState.program.leftMostCellPositionX = 55 * (-programCellOffset);
+    var programCellGroup;
+    for (var cellNum=0; cellNum<settings.program.numCells; cellNum++) {
+        var cp = cellNum - programPointerOffset;
+        var command = (cp < 0 || cp >= codeSize ? "" : code[cp]);
+        programCellGroup = scene.getObjectByName("programCellGroup" + cellNum);
+        var programText = programCellGroup.getObjectByName("programText");
+        var newProgramText = createText( "programText", command, programTextMaterial );
+        programCellGroup.remove(programText);
+        programCellGroup.add(newProgramText);
+        programCellGroup.position.x = 55 * (cellNum - programCellOffset);
+    }
+    animState.program.rightMostCellPositionX = programCellGroup.position.x;
+
+    programGroup.position.x = 0;
+}
+
+function resetInputCells() {
+    var inputCellOffset = (settings.input.numCells / 2);
+    animState.input.leftMostCellPositionX = 55 * (-inputCellOffset);
+    var inputCellGroup;
+    for (var cellNum=0; cellNum<settings.input.numCells; cellNum++) {
+        var ip = cellNum - inputCellOffset;
+        var inputChar = (ip < 0 || ip >= input.length ? "" : input[ip]);
+        inputCellGroup = scene.getObjectByName("inputCellGroup" + cellNum);
+        var inputText = inputCellGroup.getObjectByName("inputText");
+        var newInputText = createText( "inputText", inputChar, inputTextMaterial );
+        inputCellGroup.remove(inputText);
+        inputCellGroup.add(newInputText);
+        inputCellGroup.position.x = 55 * (cellNum - inputCellOffset);
+    }
+    animState.input.rightMostCellPositionX = inputCellGroup.position.x;
+
+    inputGroup.position.x = 0;
+}
+
+function resetCells() {
+
+    resetOutputCells();
+    resetMemoryCells();
+    resetProgramCells();
+    resetInputCells();
+}
+
+function resetBullet() {
+    gunGroup.remove(currentCommandText);
+}
+
+function resetAnimState() {
+    animState = {
+        commandBulletPosition: { z: -50 },
+        programGroupPosition: { x: 0 },
+        memoryGroupPosition: { x: 0 },
+        outputGroupPosition: { x: 0 },
+        inputGroupPosition: { x: 0 },
+        program: {
+            leftEndPositionX: -55 * (settings.program.numCells / 2),
+            rightEndPositionX: 55 * (settings.program.numCells / 2),
+            leftMostCellNum: 0,
+            rightMostCellNum: settings.program.numCells-1,
+            leftMostCellPositionX: 0,
+            rightMostCellPositionX: 0,
+            codePointer: codePointer
+        },
+        memory: {
+            leftEndPositionX: -55 * (settings.memory.numCells / 2),
+            rightEndPositionX: 55 * (settings.memory.numCells / 2),
+            currentCellNum: settings.memory.numCells / 2,
+            leftMostCellNum: 0,
+            rightMostCellNum: settings.memory.numCells-1,
+            leftMostCellPositionX: 0,
+            rightMostCellPositionX: 0
+        },
+        output: {
+            leftEndPositionX: -55 * (settings.output.numCells / 2),
+            rightEndPositionX: 55 * (settings.output.numCells / 2),
+            currentCellNum: settings.output.numCells / 2,
+            leftMostCellNum: 0,
+            rightMostCellNum: settings.output.numCells-1,
+            leftMostCellPositionX: 0,
+            rightMostCellPositionX: 0
+        },
+        input: {
+            leftEndPositionX: -55 * (settings.input.numCells / 2),
+            rightEndPositionX: 55 * (settings.input.numCells / 2),
+            currentCellNum: settings.input.numCells / 2,
+            leftMostCellNum: 0,
+            rightMostCellNum: settings.input.numCells-1,
+            leftMostCellPositionX: 0,
+            rightMostCellPositionX: 0,
+            inputPointer: inputPointer
+        }
+    };
+}
+
+function stopAllAnimations() {
+    TWEEN.removeAll();
+}
+
+function showSettings() {
+    programElement.value = code;
+    inputElement.value = input;
+    settingsContainer.style.display = 'block';
+}
+
+function hideSettings() {
+    settingsContainer.style.display = 'none';
+}
+
+function applySettings() {
+    stopAllAnimations();
+
+    // Reset code execution with altered program/input
+    code = programElement.value;
+    input = inputElement.value;
+    resetProgramState();
+    resetAnimState();
+    resetCells();
+    resetBullet();
+
+    hideSettings();
+
+    nextCommand();
+}
+
 function init() {
+
+    resetProgramState();
+    resetAnimState();
+
+    // SETTINGS
+
+    var settingsElement = document.querySelectorAll('#settings')[0];
+    settingsElement.addEventListener("click", showSettings);
+
+    var settingsOkButton = document.querySelectorAll('#settings_ok')[0];
+    settingsOkButton.addEventListener("click", applySettings);
+
+    var settingsCancelButton = document.querySelectorAll('#settings_cancel')[0];
+    settingsCancelButton.addEventListener("click", hideSettings);
+
+    settingsContainer = document.querySelectorAll('.settings-container')[0];
+    programElement = document.querySelectorAll('#program')[0];
+    inputElement = document.querySelectorAll('#input_values')[0];
+
+    // CONTAINER
 
     container = document.createElement( 'div' );
     document.body.appendChild( container );

@@ -7,21 +7,29 @@
 		<link rel="stylesheet" href="css/app.css"/>
 	</head>
 	<body>
-		<script src="lib/three.min.js"></script>
-		<script src="lib/Detector.js"></script>
-		<script src="lib/stats.min.js"></script>
-		<script src="lib/dat.gui.min.js"></script>
-		<script src="lib/tween.min.js"></script>
-		<script src="fonts/helvetiker_bold.typeface.js"></script>
-		<script src="fonts/helvetiker_regular.typeface.js"></script>
-		<script src="js/app.js"></script>
 
         <div class="heading-container overlay">
             <div class="heading">BF VIZ</div>
         </div>
 
-        <div class="program-container overlay hidden">
-            <div class="program">PROGRAM  ++++>+++></div>
+        <div class="settings-container overlay">
+            <div class="settings-heading">SETTINGS</div>
+            <label class="settings-label" for="program">Program</label>
+            <textarea class="settings-option" id="program"></textarea>
+            <label class="settings-label" for="input_values">Input</label>
+            <input class="settings-option" type="text" id="input_values"/>
+            <button class="settings-button" id="settings_ok">OK</button><button class="settings-button" id="settings_cancel">Cancel</button>
         </div>
-	</body>
+
+        <div class="settings-icon overlay" id="settings"/>
+
+        <script src="lib/three.min.js"></script>
+        <script src="lib/Detector.js"></script>
+        <script src="lib/stats.min.js"></script>
+        <script src="lib/dat.gui.min.js"></script>
+        <script src="lib/tween.min.js"></script>
+        <script src="fonts/helvetiker_bold.typeface.js"></script>
+        <script src="fonts/helvetiker_regular.typeface.js"></script>
+        <script src="js/app.js"></script>
+    </body>
 </html>

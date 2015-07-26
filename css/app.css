@@ -1,5 +1,5 @@
 body {
-	font-family: Monospace;
+	font-family: 'Lucida Grande', sans-serif;
 	background-color: #000;
 	color: #fff;
 	margin: 0;
@@ -10,10 +10,6 @@ body {
     position: fixed;
     background: rgba(0,0,0,0.1);
     z-index: 99999;
-}
-
-.hidden {
-    display: none;
 }
 
 .heading-container {
@@ -31,17 +27,46 @@ body {
     font-size: 30px;
 }
 
-.program-container {
+.settings-container {
+    display: none;
     width: 500px;
-    height: 44px;
-    bottom: 0;
+    top: 70px;
     left: 50%;
-    margin-left: -250px;
+    margin-left: -270px;
+    padding: 15px 20px;
+    background: rgba(63, 63, 63, 0.6);
+    border-radius: 10px;
+    border: white 1px solid;
+}
+
+.settings-heading {
     text-align: center;
 }
 
-.program {
-    color: #fff;
-    margin-top: 3px;
-    font-size: 30px;
+.settings-label {
+    margin-top: 10px;
+    margin-bottom: 4px;
+    display: block;
+}
+
+.settings-option {
+    width: 496px;
+    display: block;
+}
+
+.settings-button {
+    margin: 15px 15px 15px 0;
+    height: 30px;
+    font-size: 14px;
+    width: 70px;
+}
+
+.settings-icon {
+    width: 32px;
+    height: 32px;
+    bottom: 0;
+    right: 0;
+    margin: 10px;
+    background: url("../images/settings.svg");
+    background-size: 32px 32px;
 }
