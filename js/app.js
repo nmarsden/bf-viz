@@ -153,7 +153,14 @@ var loopIn = {}, loopOut = {};
 var animState;
 var ANIM_TIME = 500;
 
+var playerState = {
+    isPlaying: false,
+    isStepping: false,
+    isReset: true
+};
+
 var settingsContainer, programElement, inputElement;
+var resetElement, playToggleElement, stepElement;
 
 init();
 animate();
@@ -335,21 +342,136 @@ function hideSettings() {
     settingsContainer.style.display = 'none';
 }
 
-function applySettings() {
+function reset(newCode, newInput) {
     stopAllAnimations();
 
     // Reset code execution with altered program/input
-    code = programElement.value;
-    input = inputElement.value;
+    if (newCode) {
+        code = newCode;
+    }
+    if (newInput) {
+        input = newInput;
+    }
     resetProgramState();
     resetAnimState();
     resetCells();
     resetBullet();
 
+    resetPlayerControls();
+}
+
+function applySettings() {
+    reset(programElement.value, inputElement.value);
+
     hideSettings();
 
     nextCommand();
 }
+
+
+// ************* Enable/Disable Player Controls *************
+
+function resetPlayerControls() {
+    playerState.isReset = true;
+    playerState.isPlaying = false;
+    playerState.isStepping = false;
+
+    disableResetControl();
+    enableTogglePlayControl();
+    enableStepControl();
+
+    updatePlayToggleIcon();
+}
+
+function ensureResetControlIsEnabled() {
+
+    if (playerState.isReset) {
+        playerState.isReset = false;
+        // enable reset control
+        resetElement.classList.toggle('disabled', false);
+        resetElement.addEventListener("click", resetClickHandler);
+    }
+}
+
+function disableResetControl() {
+    resetElement.classList.toggle('disabled', true);
+    resetElement.removeEventListener("click", resetClickHandler);
+}
+
+function updatePlayToggleIcon() {
+    playToggleElement.classList.toggle('play', !playerState.isPlaying);
+    playToggleElement.classList.toggle('pause', playerState.isPlaying);
+}
+
+function enablePlayAndStepControls() {
+    enableTogglePlayControl();
+    enableStepControl();
+}
+
+function disablePlayAndStepControls() {
+    disableTogglePlayControl();
+    disableStepControl();
+}
+
+function enableTogglePlayControl() {
+    playToggleElement.classList.toggle('disabled', false);
+    playToggleElement.addEventListener("click", togglePlayClickHandler);
+}
+
+function disableTogglePlayControl() {
+    playToggleElement.classList.toggle('disabled', true);
+    playToggleElement.removeEventListener("click", togglePlayClickHandler);
+}
+
+function enableStepControl() {
+    stepElement.classList.toggle('disabled', false);
+    stepElement.addEventListener("click", stepClickHandler);
+}
+
+function disableStepControl() {
+    stepElement.classList.toggle('disabled', true);
+    stepElement.removeEventListener("click", stepClickHandler);
+}
+
+
+// ************* Player Control Click Handlers *************
+
+// Note: wrapping reset() for use as a click handler so that event arguments are not passed to the reset() function
+function resetClickHandler() {
+    reset();
+}
+
+function togglePlayClickHandler() {
+
+    ensureResetControlIsEnabled();
+
+    // toggle play/pause control
+    playerState.isPlaying = !playerState.isPlaying;
+    updatePlayToggleIcon();
+
+    // enable/disable step control
+    if (playerState.isPlaying) {
+        disableStepControl();
+    } else {
+        enableStepControl();
+    }
+
+    nextCommand();
+}
+
+function stepClickHandler() {
+
+    ensureResetControlIsEnabled();
+
+    playerState.isStepping = true;
+
+    disablePlayAndStepControls();
+
+    var isStep = true;
+    nextCommand(isStep);
+}
+
+// ************* Init *************
 
 function init() {
 
@@ -370,6 +492,14 @@ function init() {
     settingsContainer = document.querySelectorAll('.settings-container')[0];
     programElement = document.querySelectorAll('#program')[0];
     inputElement = document.querySelectorAll('#input_values')[0];
+
+    // PLAYER CONTROLS
+
+    resetElement = document.querySelectorAll('#reset')[0];
+    playToggleElement = document.querySelectorAll('#playToggle')[0];
+    stepElement = document.querySelectorAll('#step')[0];
+    enableTogglePlayControl();
+    enableStepControl();
 
     // CONTAINER
 
@@ -957,9 +1087,6 @@ function init() {
             scene.remove(ambientLight);
         }
     });
-
-    // Start program
-    nextCommand();
 }
 
 function setAllMaterialsNeedUpdate() {
@@ -1128,11 +1255,22 @@ function animate() {
     stats.update();
 }
 
-function nextCommand() {
+function nextCommand(isStep) {
+
+    if (playerState.isStepping && !isStep) {
+        // finish stepping
+        playerState.isStepping = false;
+        enablePlayAndStepControls();
+        return;
+    }
+
+    if (!playerState.isPlaying && !isStep) {
+        return;
+    }
 
     codePointer++;
 
-    if (codePointer === codeSize) {
+    if (codePointer >= codeSize) {
         return;
     }
 

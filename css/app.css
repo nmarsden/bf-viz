@@ -70,3 +70,44 @@ body {
     background: url("../images/settings.svg");
     background-size: 32px 32px;
 }
+
+.player-icon {
+    width: 32px;
+    height: 32px;
+    bottom: 0;
+    left: 50%;
+    margin-bottom: 10px;
+    background-color: white;
+    -webkit-mask-size: 32px 32px;
+    -webkit-mask-repeat: no-repeat;
+    mask-size: 50% 50%;
+    mask-repeat: no-repeat;
+}
+
+.reset {
+    margin-left: -48px;
+    -webkit-mask-image: url("../images/reset.svg");
+    mask-image: url("../images/reset.svg");
+}
+
+.play {
+    margin-left: -16px;
+    -webkit-mask-image: url("../images/play.svg");
+    mask-image: url("../images/play.svg");
+}
+
+.pause {
+    margin-left: -16px;
+    -webkit-mask-image: url("../images/pause.svg");
+    mask-image: url("../images/pause.svg");
+}
+
+.step {
+    margin-left: 16px;
+    -webkit-mask-image: url("../images/step.svg");
+    mask-image: url("../images/step.svg");
+}
+
+.disabled {
+    background-color: rgba(255,255,255,0.5);
+}
