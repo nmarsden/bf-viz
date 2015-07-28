@@ -159,7 +159,7 @@ var playerState = {
     isReset: true
 };
 
-var settingsContainer, programElement, inputElement;
+var settingsOverlayElement, programElement, inputElement;
 var resetElement, runToggleElement, stepElement;
 
 init();
@@ -335,11 +335,11 @@ function stopAllAnimations() {
 function showSettings() {
     programElement.value = code;
     inputElement.value = input;
-    settingsContainer.style.display = 'block';
+    settingsOverlayElement.style.display = 'block';
 }
 
 function hideSettings() {
-    settingsContainer.style.display = 'none';
+    settingsOverlayElement.style.display = 'none';
 }
 
 function reset(newCode, newInput) {
@@ -489,7 +489,7 @@ function init() {
     var settingsCancelButton = document.querySelectorAll('#settings_cancel')[0];
     settingsCancelButton.addEventListener("click", hideSettings);
 
-    settingsContainer = document.querySelectorAll('.settings-container')[0];
+    settingsOverlayElement = document.querySelectorAll('.settings-overlay')[0];
     programElement = document.querySelectorAll('#program')[0];
     inputElement = document.querySelectorAll('#input_values')[0];
 
