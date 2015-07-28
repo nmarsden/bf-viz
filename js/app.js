@@ -154,13 +154,13 @@ var animState;
 var ANIM_TIME = 500;
 
 var playerState = {
-    isPlaying: false,
+    isRunning: false,
     isStepping: false,
     isReset: true
 };
 
 var settingsContainer, programElement, inputElement;
-var resetElement, playToggleElement, stepElement;
+var resetElement, runToggleElement, stepElement;
 
 init();
 animate();
@@ -373,14 +373,14 @@ function applySettings() {
 
 function resetPlayerControls() {
     playerState.isReset = true;
-    playerState.isPlaying = false;
+    playerState.isRunning = false;
     playerState.isStepping = false;
 
     disableResetControl();
-    enableTogglePlayControl();
+    enableToggleRunControl();
     enableStepControl();
 
-    updatePlayToggleIcon();
+    updateRunToggleIcon();
 }
 
 function ensureResetControlIsEnabled() {
@@ -398,29 +398,29 @@ function disableResetControl() {
     resetElement.removeEventListener("click", resetClickHandler);
 }
 
-function updatePlayToggleIcon() {
-    playToggleElement.classList.toggle('play', !playerState.isPlaying);
-    playToggleElement.classList.toggle('pause', playerState.isPlaying);
+function updateRunToggleIcon() {
+    runToggleElement.classList.toggle('run', !playerState.isRunning);
+    runToggleElement.classList.toggle('pause', playerState.isRunning);
 }
 
-function enablePlayAndStepControls() {
-    enableTogglePlayControl();
+function enableRunAndStepControls() {
+    enableToggleRunControl();
     enableStepControl();
 }
 
-function disablePlayAndStepControls() {
-    disableTogglePlayControl();
+function disableRunAndStepControls() {
+    disableToggleRunControl();
     disableStepControl();
 }
 
-function enableTogglePlayControl() {
-    playToggleElement.classList.toggle('disabled', false);
-    playToggleElement.addEventListener("click", togglePlayClickHandler);
+function enableToggleRunControl() {
+    runToggleElement.classList.toggle('disabled', false);
+    runToggleElement.addEventListener("click", toggleRunClickHandler);
 }
 
-function disableTogglePlayControl() {
-    playToggleElement.classList.toggle('disabled', true);
-    playToggleElement.removeEventListener("click", togglePlayClickHandler);
+function disableToggleRunControl() {
+    runToggleElement.classList.toggle('disabled', true);
+    runToggleElement.removeEventListener("click", toggleRunClickHandler);
 }
 
 function enableStepControl() {
@@ -441,16 +441,16 @@ function resetClickHandler() {
     reset();
 }
 
-function togglePlayClickHandler() {
+function toggleRunClickHandler() {
 
     ensureResetControlIsEnabled();
 
-    // toggle play/pause control
-    playerState.isPlaying = !playerState.isPlaying;
-    updatePlayToggleIcon();
+    // toggle run/pause control
+    playerState.isRunning = !playerState.isRunning;
+    updateRunToggleIcon();
 
     // enable/disable step control
-    if (playerState.isPlaying) {
+    if (playerState.isRunning) {
         disableStepControl();
     } else {
         enableStepControl();
@@ -465,7 +465,7 @@ function stepClickHandler() {
 
     playerState.isStepping = true;
 
-    disablePlayAndStepControls();
+    disableRunAndStepControls();
 
     var isStep = true;
     nextCommand(isStep);
@@ -496,9 +496,9 @@ function init() {
     // PLAYER CONTROLS
 
     resetElement = document.querySelectorAll('#reset')[0];
-    playToggleElement = document.querySelectorAll('#playToggle')[0];
+    runToggleElement = document.querySelectorAll('#runToggle')[0];
     stepElement = document.querySelectorAll('#step')[0];
-    enableTogglePlayControl();
+    enableToggleRunControl();
     enableStepControl();
 
     // CONTAINER
@@ -1260,11 +1260,11 @@ function nextCommand(isStep) {
     if (playerState.isStepping && !isStep) {
         // finish stepping
         playerState.isStepping = false;
-        enablePlayAndStepControls();
+        enableRunAndStepControls();
         return;
     }
 
-    if (!playerState.isPlaying && !isStep) {
+    if (!playerState.isRunning && !isStep) {
         return;
     }
 

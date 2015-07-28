@@ -90,10 +90,10 @@ body {
     mask-image: url("../images/reset.svg");
 }
 
-.play {
+.run {
     margin-left: -16px;
-    -webkit-mask-image: url("../images/play.svg");
-    mask-image: url("../images/play.svg");
+    -webkit-mask-image: url("../images/run.svg");
+    mask-image: url("../images/run.svg");
 }
 
 .pause {
