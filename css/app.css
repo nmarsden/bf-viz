@@ -121,3 +121,16 @@ body {
 .disabled {
     background-color: rgba(255,255,255,0.5);
 }
+
+.speed-control {
+    bottom: 0;
+    left: 50%;
+    margin-left: 120px;
+    margin-bottom: 14px;
+}
+
+.speed-control label {
+    position: fixed;
+    font-size: 12px;
+    margin-left: -40px;
+}

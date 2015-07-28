@@ -161,6 +161,7 @@ var playerState = {
 
 var settingsOverlayElement, programElement, inputElement;
 var resetElement, runToggleElement, stepElement;
+var speedElement;
 
 init();
 animate();
@@ -471,6 +472,10 @@ function stepClickHandler() {
     nextCommand(isStep);
 }
 
+function speedInputHandler() {
+    ANIM_TIME = 1000 - speedElement.value;
+}
+
 // ************* Init *************
 
 function init() {
@@ -500,6 +505,10 @@ function init() {
     stepElement = document.querySelectorAll('#step')[0];
     enableToggleRunControl();
     enableStepControl();
+
+    speedElement = document.querySelectorAll('#speed')[0];
+    speedElement.value = ANIM_TIME;
+    speedElement.addEventListener("input", speedInputHandler);
 
     // CONTAINER
 
