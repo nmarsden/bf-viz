@@ -134,3 +134,10 @@ body {
     font-size: 12px;
     margin-left: -40px;
 }
+
+.preset-program-control {
+    bottom: 0;
+    left: 50%;
+    margin-left: -200px;
+    margin-bottom: 17px;
+}

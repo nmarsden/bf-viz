@@ -12,7 +12,7 @@
             <div class="heading">BF VIZ</div>
         </div>
 
-        <div class="settings-overlay">
+        <div class="settings-overlay" id="settings_overlay">
             <div class="settings-container">
                 <div class="settings-heading">SETTINGS</div>
                 <label class="settings-label" for="program">Program</label>
@@ -21,6 +21,10 @@
                 <input class="settings-option" type="text" id="input_values"/>
                 <button class="settings-button" id="settings_ok">OK</button><button class="settings-button" id="settings_cancel">Cancel</button>
             </div>
+        </div>
+
+        <div class="preset-program-control overlay">
+            <select id="preset_program"></select>
         </div>
 
         <div class="player-icon reset overlay disabled" id="reset"></div>

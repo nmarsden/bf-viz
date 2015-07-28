@@ -121,18 +121,28 @@ var commands = [ '>', '<', '+', '-', '.', ',', '[', ']' ];
 var commandTexts = {};
 var currentCommandText;
 
-var input = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 //var input = '-=!@#$%^&*()_+,.<>?[]\\{}|;\':"`~';
 //var input = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890-=!@#$%^&*()_+,.<>?[]\\{}|;\':"`~';
-//var input = 'ECHO';
 var inputPointer = 0;
+
+var presetPrograms = [
+    {
+        name: "Echo",
+        code: ">+[>,]<[<]>>[.>]",
+        input: "Print Me!"
+    },
+    {
+        name: "Hello World",
+        code: "++++++++++[>+++++++>++++++++++>+++>+<<<<-]>++.>+.+++++++..+++.>++.<<+++++++++++++++.>.+++.------.--------.",
+        input: ""
+    }
+];
 
 //var code = "+[--->++<]>++++..."; // Outputs: ZZZ
 //var code = "-[--->+<]>-------.>--[----->+<]>-.++++.+++."; // Outputs: Neil
-//var code = '++++++++++[>+++++++>++++++++++>+++>+<<<<-]>++.>+.+++++++..+++.>++.<<+++++++++++++++.>.+++.------.--------.>+.>.'; // Outputs: Hello World!
-//var code = ',>,'; // Input two characters
-//var code = ',>,<.>.'; // Output two characters from input
-var code = '>+[>,]<[<]>>[.>]'; // Outputs all input, ie. echo
+
+var code = presetPrograms[0].code;
+var input = presetPrograms[0].input;
 
 var codeSize = code.length;
 var codePointer = -1;
@@ -162,6 +172,7 @@ var playerState = {
 var settingsOverlayElement, programElement, inputElement;
 var resetElement, runToggleElement, stepElement;
 var speedElement;
+var presetProgramElement;
 
 init();
 animate();
@@ -347,10 +358,10 @@ function reset(newCode, newInput) {
     stopAllAnimations();
 
     // Reset code execution with altered program/input
-    if (newCode) {
+    if (newCode != undefined) {
         code = newCode;
     }
-    if (newInput) {
+    if (newInput != undefined) {
         input = newInput;
     }
     resetProgramState();
@@ -476,6 +487,12 @@ function speedInputHandler() {
     ANIM_TIME = 1000 - speedElement.value;
 }
 
+function presetProgramChangeHandler() {
+    var presetProgram = presetPrograms[presetProgramElement.value];
+
+    reset(presetProgram.code, presetProgram.input);
+}
+
 // ************* Init *************
 
 function init() {
@@ -485,28 +502,35 @@ function init() {
 
     // SETTINGS
 
-    var settingsElement = document.querySelectorAll('#settings')[0];
+    var settingsElement = document.getElementById('settings');
     settingsElement.addEventListener("click", showSettings);
 
-    var settingsOkButton = document.querySelectorAll('#settings_ok')[0];
+    var settingsOkButton = document.getElementById('settings_ok');
     settingsOkButton.addEventListener("click", applySettings);
 
-    var settingsCancelButton = document.querySelectorAll('#settings_cancel')[0];
+    var settingsCancelButton = document.getElementById('settings_cancel');
     settingsCancelButton.addEventListener("click", hideSettings);
 
-    settingsOverlayElement = document.querySelectorAll('.settings-overlay')[0];
-    programElement = document.querySelectorAll('#program')[0];
-    inputElement = document.querySelectorAll('#input_values')[0];
+    settingsOverlayElement = document.getElementById('settings_overlay');
+    programElement = document.getElementById('program');
+    inputElement = document.getElementById('input_values');
 
     // PLAYER CONTROLS
 
-    resetElement = document.querySelectorAll('#reset')[0];
-    runToggleElement = document.querySelectorAll('#runToggle')[0];
-    stepElement = document.querySelectorAll('#step')[0];
+    presetProgramElement = document.getElementById('preset_program');
+    for (var presetNum=0; presetNum<presetPrograms.length; presetNum++) {
+        var presetProgram = presetPrograms[presetNum];
+        presetProgramElement.options[presetProgramElement.options.length] = new Option(presetProgram.name, presetNum);
+    }
+    presetProgramElement.addEventListener("change", presetProgramChangeHandler);
+
+    resetElement = document.getElementById('reset');
+    runToggleElement = document.getElementById('runToggle');
+    stepElement = document.getElementById('step');
     enableToggleRunControl();
     enableStepControl();
 
-    speedElement = document.querySelectorAll('#speed')[0];
+    speedElement = document.getElementById('speed');
     speedElement.value = ANIM_TIME;
     speedElement.addEventListener("input", speedInputHandler);
 
