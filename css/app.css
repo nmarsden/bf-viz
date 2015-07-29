@@ -8,7 +8,7 @@ body {
 
 .overlay {
     position: fixed;
-    background: rgba(0,0,0,0.1);
+    background: rgba(0,0,0,0.0);
     z-index: 10;
 }
 
