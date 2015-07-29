@@ -171,8 +171,10 @@ var playerState = {
 
 var settingsOverlayElement, programElement, inputElement;
 var resetElement, runToggleElement, stepElement;
-var speedElement;
+var speedInputElement;
+var speedDisplayElement;
 var presetProgramElement;
+var currentCommandElement;
 
 init();
 animate();
@@ -484,7 +486,8 @@ function stepClickHandler() {
 }
 
 function speedInputHandler() {
-    ANIM_TIME = 1000 - speedElement.value;
+    ANIM_TIME = 1110 - (speedInputElement.value * 100);
+    speedDisplayElement.innerHTML = speedInputElement.value;
 }
 
 function presetProgramChangeHandler() {
@@ -530,9 +533,16 @@ function init() {
     enableToggleRunControl();
     enableStepControl();
 
-    speedElement = document.getElementById('speed');
-    speedElement.value = ANIM_TIME;
-    speedElement.addEventListener("input", speedInputHandler);
+    speedInputElement = document.getElementById('speed_input');
+    speedDisplayElement = document.getElementById('speed_display');
+    speedDisplayElement.innerHTML = 6;
+    speedInputElement.value = 6;
+    speedInputElement.addEventListener("input", speedInputHandler);
+
+    // CURRENT COMMAND
+
+    currentCommandElement = document.getElementById('current_command');
+
 
     // CONTAINER
 
@@ -889,8 +899,10 @@ function init() {
 
     // SETTINGS GUI
 
-    var gui = new dat.GUI();
+    var gui = new dat.GUI({ autoPlace: false });
     gui.close();
+    var guiContainer = document.getElementById('gui_container');
+    guiContainer.appendChild(gui.domElement);
 
     var fogFolder = gui.addFolder("Fog");
     fogFolder.addColor(settings.fog, "colour").onChange(function(value){
@@ -1288,6 +1300,10 @@ function animate() {
     stats.update();
 }
 
+function showCurrentCommand(cmd) {
+    currentCommandElement.innerText = cmd || "";
+}
+
 function nextCommand(isStep) {
 
     if (playerState.isStepping && !isStep) {
@@ -1304,6 +1320,8 @@ function nextCommand(isStep) {
     codePointer++;
 
     if (codePointer >= codeSize) {
+        disableRunAndStepControls();
+        animateProgramToTheLeft(showCurrentCommand);
         return;
     }
 
@@ -1313,6 +1331,8 @@ function nextCommand(isStep) {
 function processCommand() {
 
     var cmd = code[codePointer], prevCodePointer, times;
+
+    showCurrentCommand(cmd);
 
     switch(cmd) {
         case '>':

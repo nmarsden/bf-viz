@@ -12,6 +12,8 @@
             <div class="heading">BF VIZ</div>
         </div>
 
+        <div class="gui-container" id="gui_container"></div>
+
         <div class="settings-overlay" id="settings_overlay">
             <div class="settings-container">
                 <div class="settings-heading">SETTINGS</div>
@@ -23,16 +25,21 @@
             </div>
         </div>
 
-        <div class="preset-program-control overlay">
-            <select id="preset_program"></select>
+        <div class="current-command-container overlay">
+            <div class="current-command-heading">Current Command</div>
+            <div class="current-command" id="current_command"></div>
+        </div>
+
+        <div class="preset-program-container overlay">
+            <select class="preset-program-select" id="preset_program"></select>
         </div>
 
         <div class="player-icon reset overlay disabled" id="reset"></div>
         <div class="player-icon run overlay" id="runToggle"></div>
         <div class="player-icon step overlay" id="step"></div>
 
-        <div class="speed-control overlay">
-            <label for="speed">Speed</label><input id="speed" type="range" min="0" max="990"/>
+        <div class="speed-control-container overlay">
+            <label for="speed_input">Speed: </label><span id="speed_display"></span><input class="slider" id="speed_input" type="range" min="1" max="11"/>
         </div>
 
         <div class="settings-icon overlay" id="settings"></div>
