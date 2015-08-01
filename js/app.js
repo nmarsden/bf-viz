@@ -1275,6 +1275,7 @@ function init() {
         floor.visible = value;
     });
     renderFolder.add(settings.render, 'memory').onChange(function(value){
+        memoryPointerMarker.visible = value;
         leftMemEnd.visible = value;
         memoryGroup.visible = value;
         rightMemEnd.visible = value;
@@ -1288,11 +1289,13 @@ function init() {
         rightProgramEnd.visible = value;
     });
     renderFolder.add(settings.render, 'output').onChange(function(value){
+        outputPointerMarker.visible = value;
         leftOutputEnd.visible = value;
         outputGroup.visible = value;
         rightOutputEnd.visible = value;
     });
     renderFolder.add(settings.render, 'input').onChange(function(value){
+        inputPointerMarker.visible = value;
         leftInputEnd.visible = value;
         inputGroup.visible = value;
         rightInputEnd.visible = value;
