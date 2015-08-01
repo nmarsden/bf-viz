@@ -532,6 +532,7 @@ function reset(newRawCode, newInput) {
     if (newInput != undefined) {
         input = newInput;
     }
+    showCurrentCommand("");
     resetProgramState();
     resetAnimState();
     resetCells();
@@ -797,6 +798,12 @@ function init() {
     memoryLabel.position.x = animState.memory.leftEndPositionX + 100;
     memoryLabel.position.y = 410;
     
+    // MEMORY POINTER
+    var memoryPointerMaterial = new THREE.MeshPhongMaterial( {
+        color: settings.memory.textColour } );
+    var memoryPointerMarker = createPointer( memoryPointerMaterial );
+    memoryPointerMarker.position.y = 350;
+    
     // MEMORY
 
     memFrontTextMaterial = new THREE.MeshPhongMaterial( {
@@ -905,7 +912,13 @@ function init() {
     outputLabel = createLabel( outputLabelMaterial, labelTextMaterial, "OUTPUT" );
     outputLabel.position.x = animState.output.leftEndPositionX + 100;
     outputLabel.position.y = 585;
-    
+
+    // OUTPUT POINTER
+    var outputPointerMaterial = new THREE.MeshPhongMaterial( {
+        color: settings.output.textColour } );
+    var outputPointerMarker = createPointer( outputPointerMaterial );
+    outputPointerMarker.position.y = 525;
+
     // OUTPUT
 
     outputFrontTextMaterial = new THREE.MeshPhongMaterial( {
@@ -955,6 +968,12 @@ function init() {
     inputLabel.position.x = animState.input.leftEndPositionX + 100;
     inputLabel.position.y = 55;
 
+    // INPUT POINTER
+    var inputPointerMaterial = new THREE.MeshPhongMaterial( {
+        color: settings.input.textColour } );
+    var inputPointerMarker = createPointer( inputPointerMaterial );
+    inputPointerMarker.position.y = 0;
+    
     // INPUT
 
     inputFrontTextMaterial = new THREE.MeshPhongMaterial( {
@@ -1027,6 +1046,7 @@ function init() {
     group.add(floor);
 
     group.add(memoryLabel);
+    group.add(memoryPointerMarker);
     group.add(leftMemEnd);
     group.add(memoryGroup);
     group.add(rightMemEnd);
@@ -1039,11 +1059,13 @@ function init() {
     group.add(rightProgramEnd);
 
     group.add(outputLabel);
+    group.add(outputPointerMarker);
     group.add(leftOutputEnd);
     group.add(outputGroup);
     group.add(rightOutputEnd);
 
     group.add(inputLabel);
+    group.add(inputPointerMarker);
     group.add(leftInputEnd);
     group.add(inputGroup);
     group.add(rightInputEnd);
@@ -1354,6 +1376,18 @@ function createLabel(boxMaterial, textMaterial, text) {
     labelGroup.add(labelText);
     return labelGroup;
 }
+
+function createPointer(material) {
+    var geometry = new THREE.BoxGeometry( 50, 10, 50 );
+    var upperBox = new THREE.Mesh( geometry, material );
+    upperBox.position.y = 55;
+    var lowerBox = new THREE.Mesh( geometry, material );
+    lowerBox.position.y = -5;
+
+    var group = new THREE.Group();
+    group.add(upperBox);
+    group.add(lowerBox);
+    return group;}
 
 function createPlane(material) {
     var plane = new THREE.Mesh(
