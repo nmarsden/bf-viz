@@ -1,5 +1,6 @@
 body {
 	font-family: 'Lucida Grande', sans-serif;
+    font-size: 10px;
 	background-color: #000;
 	color: #fff;
 	margin: 0;
@@ -13,21 +14,21 @@ body {
 }
 
 .heading-container {
-    width: 126px;
-    height: 44px;
+    width: 190px;
     top: 0;
     left: 50%;
-    margin-left: -63px;
+    margin-left: -95px;
     text-align: center;
 }
 
 .heading {
     color: #fff;
     margin-top: 3px;
-    font-size: 30px;
+    font-size: 15px;
+    text-shadow: 1px 1px 1px #cccccc;
 }
 
-.settings-overlay {
+.dialog-overlay {
     display: none;
     position: fixed;
     background: rgba(0,0,0,0.6);
@@ -36,21 +37,99 @@ body {
     z-index: 999;
 }
 
-.settings-container {
+.dialog-container {
+    color: rgba(255, 255, 255, 0.8);
     position: fixed;
     width: 500px;
     top: 70px;
     left: 50%;
     margin-left: -270px;
     padding: 15px 20px;
-    background: rgba(63, 63, 63, 0.5);
+    background: rgba(13, 13, 13, 0.5);
     border-radius: 10px;
     border: white 1px solid;
     z-index: 99999;
 }
 
-.settings-heading {
+.info-container {
+    width: 640px;
+    margin-left: -340px;
+}
+
+.dialog-close {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+}
+
+.dialog-heading {
     text-align: center;
+    font-weight: bold;
+    color: rgba(230,230, 20, 0.9);
+}
+
+.sub-heading {
+    font-weight: bold;
+    color: rgba(230,230, 20, 0.9);
+    margin-bottom: 5px;
+}
+
+table, caption, tbody, tfoot, thead, tr, th, td {
+    margin: 0;
+    padding: 5px;
+    border: 0;
+    font-size: 100%;
+    font: inherit;
+    vertical-align: baseline;
+    border: 1px solid white;
+}
+
+table {
+    border-collapse: collapse;
+    border-spacing: 0;
+}
+
+.command-column {
+    text-align: center;
+}
+
+.page-controls-container {
+    position: relative;
+    width: 100px;
+    height: 30px;
+    top: 15px;
+    left: 50%;
+    margin-left: -50px;
+}
+
+.previous-page {
+    position: absolute;
+    left: 0;
+}
+
+.next-page {
+    position: absolute;
+    right: 0;
+}
+
+.button {
+    color: rgba(97, 135, 200, 0.8);
+    display: inline;
+    padding: 5px;
+    cursor: pointer;
+}
+
+.button:hover {
+    color: rgba(97, 135, 200, 1.0);
+}
+
+.button-disabled {
+    color: rgba(97, 135, 200, 0.3);
+    cursor: auto;
+}
+
+.button-disabled:hover {
+    color: rgba(97, 135, 200, 0.3);
 }
 
 .settings-label {
@@ -71,55 +150,70 @@ body {
     width: 70px;
 }
 
-.settings-icon {
+.toolbar-icon {
     width: 32px;
     height: 32px;
     bottom: 0;
-    right: 0;
-    margin: 10px;
-    background: url("../images/settings.svg");
-    background-size: 32px 32px;
-}
-
-.player-icon {
-    width: 32px;
-    height: 32px;
-    bottom: 0;
-    left: 50%;
     margin-bottom: 10px;
-    background-color: white;
+    cursor: pointer;
+    background-color: rgba(255,255,255,0.8);
     -webkit-mask-size: 32px 32px;
     -webkit-mask-repeat: no-repeat;
     mask-size: 50% 50%;
     mask-repeat: no-repeat;
 }
 
+.toolbar-icon:hover {
+    background-color: rgba(255,255,255,1.0);
+}
+
+.toolbar-icon-disabled {
+    background-color: rgba(255,255,255,0.3);
+    cursor: auto;
+}
+
+.toolbar-icon-disabled:hover {
+    background-color: rgba(255,255,255,0.3);
+}
+
 .reset {
-    margin-left: -48px;
+    left: 50%;
+    margin-left: -50px;
     -webkit-mask-image: url("../images/reset.svg");
     mask-image: url("../images/reset.svg");
 }
 
 .run {
+    left: 50%;
     margin-left: -16px;
     -webkit-mask-image: url("../images/run.svg");
     mask-image: url("../images/run.svg");
 }
 
 .pause {
+    left: 50%;
     margin-left: -16px;
     -webkit-mask-image: url("../images/pause.svg");
     mask-image: url("../images/pause.svg");
 }
 
 .step {
-    margin-left: 16px;
+    left: 50%;
+    margin-left: 18px;
     -webkit-mask-image: url("../images/step.svg");
     mask-image: url("../images/step.svg");
 }
 
-.disabled {
-    background-color: rgba(255,255,255,0.5);
+.settings {
+    right: 47px;
+    -webkit-mask-image: url("../images/settings.svg");
+    mask-image: url("../images/settings.svg");
+}
+
+.info {
+    right: 10px;
+    -webkit-mask-image: url("../images/info.svg");
+    mask-image: url("../images/info.svg");
 }
 
 .speed-control-container {
@@ -142,6 +236,7 @@ body {
     bottom: 0;
     right: 0;
     margin-right: 120px;
+    cursor: pointer;
     border: 1px solid #000;
     font-size: 12px;
     color: #fff;
@@ -161,7 +256,7 @@ body {
     right: 0;
     margin: 10px;
     position: fixed;
-    width: 200px;
+    width: 110px;
     height: 68px;
     padding: 15px 20px;
     background: rgba(63, 63, 63, 0.5);
@@ -170,7 +265,7 @@ body {
 }
 
 .current-command-heading {
-    font-size: 13px;
+    font-size: 12px;
     text-align: center;
 }
 

@@ -125,16 +125,57 @@ var currentCommandText;
 //var input = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890-=!@#$%^&*()_+,.<>?[]\\{}|;\':"`~';
 var inputPointer = 0;
 
+//var allPrintableAsciiChars = "";
+//for (var n=32; n<127; n++) {
+//    allPrintableAsciiChars += String.fromCharCode(n);
+//}
+//console.log("Printable ASCII Chars: ", allPrintableAsciiChars);
+
 var presetPrograms = [
+    //{
+    //    name: "Test Spaces",
+    //    code: ",.>.,.>.,.",
+    //    input: "ABC"
+    //},
     {
-        name: "Echo",
+        name: "Copy",
         code: ">+[>,]<[<]>>[.>]",
-        input: "Print Me!"
+        input: "ECHO"
     },
     {
         name: "Hello World",
         code: "++++++++++[>+++++++>++++++++++>+++>+<<<<-]>++.>+.+++++++..+++.>++.<<+++++++++++++++.>.+++.------.--------.",
         input: ""
+    },
+    {
+        name: "Powers of Two",
+        code: ">++++++++++>>+<+[[+++++[>++++++++<-]>.<++++++[>--------<-]+<<]>.>[->[<++>-[<++>-[<++>-[<++>-[<-------->>[-]++<-[<++>-]]]]]]<[>+<-]+>>]<<] ",
+        input: ""
+    },
+    {
+        name: "Printable ASCII Chars",
+        code: ",.[>,.]",
+        input: " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
+    },
+    {
+        name: "Reverse",
+        code: ">,[>,]<[.<]",
+        input: "DESREVER"
+    },
+    {
+        name: "Sort",
+        code: ">>,[>>,]<<[[-<+<]>[>[>>]<[.[-]<[[>>+<<-]<]>>]>]<<]",
+        input: "CAB"
+    },
+    {
+        name: "Translate Binary to ASCII",
+        code: ">,[>>>++++++++[<[<++>-]<+[>+<-]<-[-[-<]>]>[-<]<,>>>-]<.[-]<<]",
+        input: "0110100001101001"
+    },
+    {
+        name: "Translate to BF",
+        code: "+++++[>+++++++++<-],[[>--.++>+<<-]>+.->[<.>-]<<,]",
+        input: "HELLO WORLD"
     }
 ];
 
@@ -170,11 +211,15 @@ var playerState = {
 };
 
 var settingsOverlayElement, programElement, inputElement;
+var infoOverlayElement, previousPageElement, nextPageElement;
 var resetElement, runToggleElement, stepElement;
 var speedInputElement;
 var speedDisplayElement;
 var presetProgramElement;
 var currentCommandElement;
+
+var infoPageNum = 1;
+var MAX_INFO_PAGES = 1;
 
 init();
 animate();
@@ -356,6 +401,42 @@ function hideSettings() {
     settingsOverlayElement.style.display = 'none';
 }
 
+function showInfo() {
+    infoOverlayElement.style.display = 'block';
+}
+
+function hideInfo() {
+    infoOverlayElement.style.display = 'none';
+}
+
+function showInfoPage(pageNum) {
+    var page = document.getElementById("info_page_" + pageNum);
+    page.style.display = 'block';
+    previousPageElement.classList.toggle('button-disabled', (pageNum == 1));
+    nextPageElement.classList.toggle('button-disabled', (pageNum == MAX_INFO_PAGES));
+}
+
+function hideInfoPage(pageNum) {
+    var page = document.getElementById("info_page_" + pageNum);
+    page.style.display = 'none';
+}
+
+function previousInfoPage() {
+    if (infoPageNum == 1) {
+        return;
+    }
+    hideInfoPage(infoPageNum);
+    showInfoPage(--infoPageNum);
+}
+
+function nextInfoPage() {
+    if (infoPageNum == MAX_INFO_PAGES) {
+        return;
+    }
+    hideInfoPage(infoPageNum);
+    showInfoPage(++infoPageNum);
+}
+
 function reset(newCode, newInput) {
     stopAllAnimations();
 
@@ -402,13 +483,13 @@ function ensureResetControlIsEnabled() {
     if (playerState.isReset) {
         playerState.isReset = false;
         // enable reset control
-        resetElement.classList.toggle('disabled', false);
+        resetElement.classList.toggle('toolbar-icon-disabled', false);
         resetElement.addEventListener("click", resetClickHandler);
     }
 }
 
 function disableResetControl() {
-    resetElement.classList.toggle('disabled', true);
+    resetElement.classList.toggle('toolbar-icon-disabled', true);
     resetElement.removeEventListener("click", resetClickHandler);
 }
 
@@ -428,22 +509,22 @@ function disableRunAndStepControls() {
 }
 
 function enableToggleRunControl() {
-    runToggleElement.classList.toggle('disabled', false);
+    runToggleElement.classList.toggle('toolbar-icon-disabled', false);
     runToggleElement.addEventListener("click", toggleRunClickHandler);
 }
 
 function disableToggleRunControl() {
-    runToggleElement.classList.toggle('disabled', true);
+    runToggleElement.classList.toggle('toolbar-icon-disabled', true);
     runToggleElement.removeEventListener("click", toggleRunClickHandler);
 }
 
 function enableStepControl() {
-    stepElement.classList.toggle('disabled', false);
+    stepElement.classList.toggle('toolbar-icon-disabled', false);
     stepElement.addEventListener("click", stepClickHandler);
 }
 
 function disableStepControl() {
-    stepElement.classList.toggle('disabled', true);
+    stepElement.classList.toggle('toolbar-icon-disabled', true);
     stepElement.removeEventListener("click", stepClickHandler);
 }
 
@@ -517,6 +598,24 @@ function init() {
     settingsOverlayElement = document.getElementById('settings_overlay');
     programElement = document.getElementById('program');
     inputElement = document.getElementById('input_values');
+
+    // INFO
+
+    var infoElement = document.getElementById('info');
+    infoElement.addEventListener("click", showInfo);
+
+    var infoCloseElement = document.getElementById('info_close');
+    infoCloseElement.addEventListener("click", hideInfo);
+
+    infoOverlayElement = document.getElementById('info_overlay');
+
+    previousPageElement = document.getElementById('previous_page');
+    previousPageElement.addEventListener("click", previousInfoPage);
+
+    nextPageElement = document.getElementById('next_page');
+    nextPageElement.addEventListener("click", nextInfoPage);
+
+    showInfoPage(infoPageNum);
 
     // PLAYER CONTROLS
 
@@ -1401,8 +1500,8 @@ function processCommand() {
             break;
 
         case '.':
-            output += String.fromCharCode(memory[memoryPointer]);
-            
+            output += (!memory[memoryPointer]) ? " " : String.fromCharCode(memory[memoryPointer]);
+
             fireCommandBullet(cmd, animateNewOutputValue);
             break;
     }

@@ -9,19 +9,54 @@
 	<body>
 
         <div class="heading-container overlay">
-            <div class="heading">BF VIZ</div>
+            <div class="heading">BRAINF**K VISUALIZER</div>
         </div>
 
         <div class="gui-container" id="gui_container"></div>
 
-        <div class="settings-overlay" id="settings_overlay">
-            <div class="settings-container">
-                <div class="settings-heading">SETTINGS</div>
+        <div class="dialog-overlay" id="settings_overlay">
+            <div class="dialog-container">
+                <div class="dialog-heading">Settings</div>
                 <label class="settings-label" for="program">Program</label>
                 <textarea class="settings-option" id="program"></textarea>
                 <label class="settings-label" for="input_values">Input</label>
                 <input class="settings-option" type="text" id="input_values"/>
                 <button class="settings-button" id="settings_ok">OK</button><button class="settings-button" id="settings_cancel">Cancel</button>
+            </div>
+        </div>
+
+        <div class="dialog-overlay" id="info_overlay">
+            <div class="dialog-container info-container">
+                <div class="dialog-close button" id="info_close">X</div>
+                <div class="info-page" style="display:none" id="info_page_1">
+                    <div class="dialog-heading">Welcome</div>
+                    <p>This is a visualizer for the esoteric programming language brainfuck (also known less offensively as BF).</p>
+                    <p>The BF language is extremely minimal, consisting of only eight single character commands.</p>
+                    <div class="sub-heading">BF Commands</div>
+                    <table class="commands-table">
+                        <thead class="commands-table-head">
+                            <tr><td>Command</td><td>Meaning</td></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td class="command-column">&gt;</td><td>Increment the memory pointer (to point to the next cell to the right).</td></tr>
+                            <tr><td class="command-column">&lt;</td><td>Decrement the memory pointer (to point to the next cell to the left).</td></tr>
+                            <tr><td class="command-column">+</td><td>Add one to the number at the memory pointer.</td></tr>
+                            <tr><td class="command-column">-</td><td>Subtract one from the number at the memory pointer.</td></tr>
+                            <tr><td class="command-column">.</td><td>Take the number at the memory pointer and put its ASCII character into the Output.</td></tr>
+                            <tr><td class="command-column">,</td><td>Take the ASCII character from the Input and put its ASCII value as the number at the memory pointer.</td></tr>
+                            <tr><td class="command-column">[</td><td>If the number at the memory pointer is zero, then instead of moving the program pointer forward to the next command, jump it forward to the command after the matching ] command.</td></tr>
+                            <tr><td class="command-column">]</td><td>Move the program pointer back to the the matching [ command.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="info-page" style="display:none" id="info_page_2">
+                    <div class="dialog-heading">Info Page Two</div>
+                    <p>TODO - Some text will go here :-)</p>
+                </div>
+                <div class="page-controls-container">
+                    <div class="previous-page button" id="previous_page">Previous</div>
+                    <div class="next-page button" id="next_page">Next</div>
+                </div>
             </div>
         </div>
 
@@ -34,15 +69,16 @@
             <select class="preset-program-select" id="preset_program"></select>
         </div>
 
-        <div class="player-icon reset overlay disabled" id="reset"></div>
-        <div class="player-icon run overlay" id="runToggle"></div>
-        <div class="player-icon step overlay" id="step"></div>
+        <div class="toolbar-icon reset overlay toolbar-icon-disabled" id="reset"></div>
+        <div class="toolbar-icon run overlay" id="runToggle"></div>
+        <div class="toolbar-icon step overlay" id="step"></div>
 
         <div class="speed-control-container overlay">
             <label for="speed_input">Speed: </label><span id="speed_display"></span><input class="slider" id="speed_input" type="range" min="1" max="11"/>
         </div>
 
-        <div class="settings-icon overlay" id="settings"></div>
+        <div class="toolbar-icon settings overlay" id="settings"></div>
+        <div class="toolbar-icon info overlay" id="info"></div>
 
         <script src="lib/three.min.js"></script>
         <script src="lib/Detector.js"></script>
