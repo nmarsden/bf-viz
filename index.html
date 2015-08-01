@@ -4,11 +4,14 @@
 		<title>bf-viz</title>
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
-		<link rel="stylesheet" href="css/app.css"/>
-	</head>
+		<link rel="stylesheet" href="lib/codemirror/codemirror.css"/>
+
+        <!-- Note: app.css needs to be last to override codemirror.css styles -->
+        <link rel="stylesheet" href="css/app.css"/>
+    </head>
 	<body>
 
-        <div class="heading-container overlay">
+    <div class="heading-container overlay">
             <div class="heading">BRAINF**K VISUALIZER</div>
         </div>
 
@@ -18,15 +21,15 @@
             <div class="dialog-container">
                 <div class="dialog-heading">Settings</div>
                 <label class="settings-label" for="program">Program</label>
-                <textarea class="settings-option" id="program"></textarea>
+                <textarea id="program"></textarea>
                 <label class="settings-label" for="input_values">Input</label>
-                <input class="settings-option" type="text" id="input_values"/>
+                <input class="settings-input" type="text" id="input_values"/>
                 <button class="settings-button" id="settings_ok">OK</button><button class="settings-button" id="settings_cancel">Cancel</button>
             </div>
         </div>
 
         <div class="dialog-overlay" id="info_overlay">
-            <div class="dialog-container info-container">
+            <div class="dialog-container">
                 <div class="dialog-close button" id="info_close">X</div>
                 <div class="info-page" style="display:none" id="info_page_1">
                     <div class="dialog-heading">Welcome</div>
@@ -87,6 +90,11 @@
         <script src="lib/tween.min.js"></script>
         <script src="fonts/helvetiker_bold.typeface.js"></script>
         <script src="fonts/helvetiker_regular.typeface.js"></script>
+
+        <script src="lib/codemirror/codemirror.js"></script>
+        <script src="lib/codemirror/matchbrackets.js"></script>
+        <script src="lib/codemirror/brainfuck.js"></script>
+
         <script src="js/app.js"></script>
     </body>
 </html>

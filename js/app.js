@@ -134,47 +134,121 @@ var inputPointer = 0;
 var presetPrograms = [
     //{
     //    name: "Test Spaces",
-    //    code: ",.>.,.>.,.",
+    //    rawCode: ",.>.,.>.,.",
     //    input: "ABC"
     //},
     {
         name: "Copy",
-        code: ">+[>,]<[<]>>[.>]",
+        rawCode:
+"### Copy ###\n\
+\n\
++[>,]       For all the ASCII characters in Input, put their ASCII code into Memory\n\
+<[<]>>      Adjust the Memory pointer to point to the first ASCII code in Memory\n\
+[.>]        For all the non-zero values in Memory, put their ASCII characters into Output",
         input: "ECHO"
     },
     {
         name: "Hello World",
-        code: "++++++++++[>+++++++>++++++++++>+++>+<<<<-]>++.>+.+++++++..+++.>++.<<+++++++++++++++.>.+++.------.--------.",
+        rawCode:
+"### Hello World ###\n\
+\n\
++++++ +++               Set Cell #0 to 8\n\
+[\n\
+    >++++               Add 4 to Cell #1; this will always set Cell #1 to 4\n\
+    [                   as the cell will be cleared by the loop\n\
+        >++             Add 2 to Cell #2\n\
+        >+++            Add 3 to Cell #3\n\
+        >+++            Add 3 to Cell #4\n\
+        >+              Add 1 to Cell #5\n\
+        <<<<-           Decrement the loop counter in Cell #1\n\
+    ]                   Loop till Cell #1 is zero; number of iterations is 4\n\
+    >+                  Add 1 to Cell #2\n\
+    >+                  Add 1 to Cell #3\n\
+    >-                  Subtract 1 from Cell #4\n\
+    >>+                 Add 1 to Cell #6\n\
+    [<]                 Move back to the first zero cell you find; this will\n\
+                        be Cell #1 which was cleared by the previous loop\n\
+    <-                  Decrement the loop Counter in Cell #0\n\
+]                       Loop till Cell #0 is zero; number of iterations is 8\n\
+\n\
+The result of this is:\n\
+Cell No :   0   1   2   3   4   5   6\n\
+Contents:   0   0  72 104  88  32   8\n\
+Pointer :   ^\n\
+\n\
+>>.                     Cell #2 has value 72 which is 'H'\n\
+>---.                   Subtract 3 from Cell #3 to get 101 which is 'e'\n\
++++++++..+++.           Likewise for 'llo' from Cell #3\n\
+>>.                     Cell #5 is 32 for the space\n\
+<-.                     Subtract 1 from Cell #4 for 87 to give a 'W'\n\
+<.                      Cell #3 was set to 'o' from the end of 'Hello'\n\
++++.------.--------.    Cell #3 for 'rl' and 'd'\n\
+>>+.                    Add 1 to Cell #5 gives us an exclamation point",
         input: ""
     },
     {
         name: "Powers of Two",
-        code: ">++++++++++>>+<+[[+++++[>++++++++<-]>.<++++++[>--------<-]+<<]>.>[->[<++>-[<++>-[<++>-[<++>-[<-------->>[-]++<-[<++>-]]]]]]<[>+<-]+>>]<<] ",
+        rawCode: ">++++++++++>>+<+[[+++++[>++++++++<-]>.<++++++[>--------<-]+<<]>.>[->[<++>-[<++>-[<++>-[<++>-[<-------->>[-]++<-[<++>-]]]]]]<[>+<-]+>>]<<] ",
         input: ""
     },
     {
         name: "Printable ASCII Chars",
-        code: ",.[>,.]",
+        rawCode: ",.[>,.]",
         input: " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
     },
     {
         name: "Reverse",
-        code: ">,[>,]<[.<]",
+        rawCode: ">,[>,]<[.<]",
         input: "DESREVER"
     },
     {
+        name: "ROT13",
+        rawCode:
+"### ROT13 ###\n\
+\n\
+-,+[                  Read first character and start outer character reading loop\n\
+  -[                  Skip forward if character is 0\n\
+    >>++++            Set up divisor (32) for division loop\n\
+    [>++++++++<-]       (MEMORY LAYOUT: dividend copy remainder divisor quotient zero zero)\n\
+    <+<-[             Set up dividend (x minus 1) and enter division loop\n\
+      >+>+>-[>>>]     Increase copy and remainder / reduce divisor / Normal case: skip forward\n\
+      <[[>+<-]>>+>]   Special case: move remainder back to divisor and increase quotient\n\
+      <<<<<-          Decrement dividend\n\
+    ]                 End division loop\n\
+  ]>>>[-]+              End skip loop; zero former divisor and reuse space for a flag\n\
+  >--[-[<->+++[-]]]<[ Zero that flag unless quotient was 2 or 3; zero quotient; check flag\n\
+    ++++++++++++<[    If flag then set up divisor (13) for second division loop\n\
+                        (MEMORY LAYOUT: zero copy dividend divisor remainder quotient zero zero)\n\
+      >-[>+>>]        Reduce divisor; Normal case: increase remainder\n\
+      >[+[<+>-]>+>>]  Special case: increase remainder / move it back to divisor / increase quotient\n\
+      <<<<<-          Decrease dividend\n\
+    ]                 End division loop\n\
+    >>[<+>-]          Add remainder back to divisor to get a useful 13\n\
+    >[                Skip forward if quotient was 0\n\
+      -[              Decrement quotient and skip forward if quotient was 1\n\
+        -<<[-]>>      Zero quotient and divisor if quotient was 2\n\
+      ]<<[<<->>-]>>   Zero divisor and subtract 13 from copy if quotient was 1\n\
+    ]<<[<<+>>-]       Zero divisor and add 13 to copy if quotient was 0\n\
+  ]                   End outer skip loop (jump to here if ((character minus 1)/32) was not 2 or 3)\n\
+  <[-]                Clear remainder from first division if second division was skipped\n\
+  <.[-]               Output ROT13ed character from copy and clear it\n\
+  <-,+                Read next character\n\
+]                     End character reading loop",
+        input: "PVCURE"
+    },
+    {
         name: "Sort",
-        code: ">>,[>>,]<<[[-<+<]>[>[>>]<[.[-]<[[>>+<<-]<]>>]>]<<]",
+        rawCode: ">>,[>>,]<<[[-<+<]>[>[>>]<[.[-]<[[>>+<<-]<]>>]>]<<]",
         input: "CAB"
     },
     {
         name: "Translate Binary to ASCII",
-        code: ">,[>>>++++++++[<[<++>-]<+[>+<-]<-[-[-<]>]>[-<]<,>>>-]<.[-]<<]",
+        rawCode: ">,[>>>++++++++[<[<++>-]<+[>+<-]<-[-[-<]>]>[-<]<,>>>-]<.[-]<<]",
         input: "0110100001101001"
     },
     {
         name: "Translate to BF",
-        code: "+++++[>+++++++++<-],[[>--.++>+<<-]>+.->[<.>-]<<,]",
+        rawCode: "+++++[>+++++++++<-],[[>--.++>+<<-]>+.->[<.>-]<<,]",
         input: "HELLO WORLD"
     }
 ];
@@ -182,8 +256,11 @@ var presetPrograms = [
 //var code = "+[--->++<]>++++..."; // Outputs: ZZZ
 //var code = "-[--->+<]>-------.>--[----->+<]>-.++++.+++."; // Outputs: Neil
 
-var code = presetPrograms[0].code;
-var input = presetPrograms[0].input;
+var DEFAULT_PRESET_NUM = 0; // Copy
+var DEFAULT_PROGRAM = presetPrograms[DEFAULT_PRESET_NUM];
+var rawCode = DEFAULT_PROGRAM.rawCode;
+var code = extractBFCommands(rawCode);
+var input = DEFAULT_PROGRAM.input;
 
 var codeSize = code.length;
 var codePointer = -1;
@@ -211,6 +288,7 @@ var playerState = {
 };
 
 var settingsOverlayElement, programElement, inputElement;
+var editor;
 var infoOverlayElement, previousPageElement, nextPageElement;
 var resetElement, runToggleElement, stepElement;
 var speedInputElement;
@@ -223,6 +301,10 @@ var MAX_INFO_PAGES = 1;
 
 init();
 animate();
+
+function extractBFCommands(rawCode) {
+    return rawCode.replace(/[^\+\-\.\[\],<>]/g, '');
+}
 
 function resetProgramState() {
     inputPointer = 0;
@@ -392,9 +474,11 @@ function stopAllAnimations() {
 }
 
 function showSettings() {
-    programElement.value = code;
+    editor.setValue(rawCode);
+    editor.focus();
     inputElement.value = input;
     settingsOverlayElement.style.display = 'block';
+    editor.refresh();
 }
 
 function hideSettings() {
@@ -437,12 +521,13 @@ function nextInfoPage() {
     showInfoPage(++infoPageNum);
 }
 
-function reset(newCode, newInput) {
+function reset(newRawCode, newInput) {
     stopAllAnimations();
 
     // Reset code execution with altered program/input
-    if (newCode != undefined) {
-        code = newCode;
+    if (newRawCode != undefined) {
+        rawCode = newRawCode;
+        code = extractBFCommands(newRawCode);
     }
     if (newInput != undefined) {
         input = newInput;
@@ -456,7 +541,7 @@ function reset(newCode, newInput) {
 }
 
 function applySettings() {
-    reset(programElement.value, inputElement.value);
+    reset(editor.getValue(), inputElement.value);
 
     hideSettings();
 
@@ -574,7 +659,7 @@ function speedInputHandler() {
 function presetProgramChangeHandler() {
     var presetProgram = presetPrograms[presetProgramElement.value];
 
-    reset(presetProgram.code, presetProgram.input);
+    reset(presetProgram.rawCode, presetProgram.input);
 }
 
 // ************* Init *************
@@ -599,6 +684,12 @@ function init() {
     programElement = document.getElementById('program');
     inputElement = document.getElementById('input_values');
 
+    editor = CodeMirror.fromTextArea(programElement, {
+        lineNumbers: true,
+        matchBrackets: true,
+        mode: "text/x-brainfuck"
+    });
+
     // INFO
 
     var infoElement = document.getElementById('info');
@@ -622,7 +713,7 @@ function init() {
     presetProgramElement = document.getElementById('preset_program');
     for (var presetNum=0; presetNum<presetPrograms.length; presetNum++) {
         var presetProgram = presetPrograms[presetNum];
-        presetProgramElement.options[presetProgramElement.options.length] = new Option(presetProgram.name, presetNum);
+        presetProgramElement.options[presetProgramElement.options.length] = new Option(presetProgram.name, presetNum, true, (presetNum === DEFAULT_PRESET_NUM));
     }
     presetProgramElement.addEventListener("change", presetProgramChangeHandler);
 
