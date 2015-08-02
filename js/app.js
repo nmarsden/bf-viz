@@ -15,9 +15,6 @@ var settings = {
         cellOpacity: 0.12,
         textColour: "#d5de8d"
     },
-    gun: {
-        colour: "#c07171"
-    },
     program: {
         numCells: 24,
         cellColour: "#ffffff",
@@ -82,7 +79,6 @@ var settings = {
         fog: false,
         floor: false,
         memory: true,
-        gun: true,
         program: true,
         output: true,
         input: true,
@@ -98,7 +94,7 @@ var container, stats;
 
 var fog;
 
-var floorMaterial, memBoxMaterial, memFrontTextMaterial, memSideTextMaterial, memoryTextMaterial, gunMaterial;
+var floorMaterial, memBoxMaterial, memFrontTextMaterial, memSideTextMaterial, memoryTextMaterial;
 var programBoxMaterial, programFrontTextMaterial, programSideTextMaterial, programTextMaterial;
 var outputBoxMaterial, outputFrontTextMaterial, outputSideTextMaterial, outputTextMaterial;
 var inputBoxMaterial, inputFrontTextMaterial, inputSideTextMaterial, inputTextMaterial;
@@ -107,7 +103,7 @@ var cmdMaterial;
 
 var camera, cameraTarget, scene, renderer;
 
-var group, gunGroup, programGroup, memoryGroup, outputGroup, inputGroup;
+var group, programPointerMarker, programGroup, memoryGroup, outputGroup, inputGroup;
 var inputLabel, programLabel, memoryLabel, outputLabel;
 
 var targetRotation = settings.scene.rotation.y;
@@ -387,7 +383,7 @@ function resetOutputCells() {
     for (var cellNum=0; cellNum<settings.output.numCells; cellNum++) {
         outputCellGroup = scene.getObjectByName("outputCellGroup" + cellNum);
         var outputText = outputCellGroup.getObjectByName("outputText");
-        var newOutputText = createText( "outputText", "", outputTextMaterial );
+        var newOutputText = createOutputText("");
         outputCellGroup.remove(outputText);
         outputCellGroup.add(newOutputText);
         outputCellGroup.position.x = 55 * (cellNum - outputCellOffset);
@@ -410,7 +406,7 @@ function resetMemoryCells() {
         }
         memoryCellGroup = scene.getObjectByName("memoryCellGroup" + cellNum);
         var memoryText = memoryCellGroup.getObjectByName("memoryText");
-        var newMemoryText = createText( "memoryText", getMemoryValue(memPointer)+"", memoryTextMaterial );
+        var newMemoryText = createMemoryText(getMemoryValue(memPointer)+"");
         memoryCellGroup.remove(memoryText);
         memoryCellGroup.add(newMemoryText);
         memoryCellGroup.position.x = 55 * (cellNum -  memoryCellOffset);
@@ -449,7 +445,7 @@ function resetInputCells() {
         var inputChar = (ip < 0 || ip >= input.length ? "" : input[ip]);
         inputCellGroup = scene.getObjectByName("inputCellGroup" + cellNum);
         var inputText = inputCellGroup.getObjectByName("inputText");
-        var newInputText = createText( "inputText", inputChar, inputTextMaterial );
+        var newInputText = createInputText(inputChar);
         inputCellGroup.remove(inputText);
         inputCellGroup.add(newInputText);
         inputCellGroup.position.x = 55 * (cellNum - inputCellOffset);
@@ -468,7 +464,7 @@ function resetCells() {
 }
 
 function resetBullet() {
-    gunGroup.remove(currentCommandText);
+    programPointerMarker.remove(currentCommandText);
 }
 
 function resetAnimState() {
@@ -909,7 +905,7 @@ function init() {
         }
         memoryCellGroup = new THREE.Group();
         memoryCellGroup.name = "memoryCellGroup" + cellNum;
-        memoryCellGroup.add( createText( "memoryText", getMemoryValue(memPointer)+"", memoryTextMaterial ) );
+        memoryCellGroup.add( createMemoryText(getMemoryValue(memPointer)+"") );
         memoryCellGroup.add( createBox( memBoxMaterial ) );
         memoryCellGroup.position.x = 55 * (cellNum -  memoryCellOffset);
 
@@ -1006,7 +1002,7 @@ function init() {
     for (cellNum=0; cellNum<settings.output.numCells; cellNum++) {
         outputCellGroup = new THREE.Group();
         outputCellGroup.name = "outputCellGroup" + cellNum;
-        outputCellGroup.add( createText( "outputText", "", outputTextMaterial ) );
+        outputCellGroup.add( createOutputText("") );
         outputCellGroup.add( createBox( outputBoxMaterial ) );
         outputCellGroup.position.x = 55 * (cellNum - outputCellOffset);
 
@@ -1037,6 +1033,7 @@ function init() {
     inputLabel.position.y = 55;
 
     // INPUT POINTER
+
     var inputPointerMaterial = new THREE.MeshPhongMaterial( {
         color: settings.input.textColour } );
     var inputPointerMarker = createPointer( inputPointerMaterial );
@@ -1057,7 +1054,7 @@ function init() {
         var inputText = (ip < 0 || ip >= input.length ? "" : input[ip]);
         inputCellGroup = new THREE.Group();
         inputCellGroup.name = "inputCellGroup" + cellNum;
-        inputCellGroup.add( createText( "inputText", inputText, inputTextMaterial ) );
+        inputCellGroup.add(createInputText(inputText));
         inputCellGroup.add( createBox( inputBoxMaterial ) );
         inputCellGroup.position.x = 55 * (cellNum - inputCellOffset);
 
@@ -1089,18 +1086,14 @@ function init() {
         commandTexts[cmd] = cmdText;
     }
 
-    // GUN
+    // PROGRAM POINTER
 
-    gunGroup = new THREE.Group();
-    gunMaterial = new THREE.MeshPhongMaterial( {
-        color: settings.gun.colour } );
-    var gunBox = createGunBox( gunMaterial );
-    var gunBarrel = createGunBarrel( gunMaterial );
+    var programPointerMaterial = new THREE.MeshPhongMaterial( {
+        color: settings.program.textColour } );
 
-    gunGroup.add( gunBox );
-    gunGroup.add( gunBarrel );
-    gunGroup.position.z = 0;
-    gunGroup.position.y = 170;
+    programPointerMarker = createPointer( programPointerMaterial );
+    programPointerMarker.position.z = 0;
+    programPointerMarker.position.y = 175;
 
     // GROUP
 
@@ -1113,9 +1106,8 @@ function init() {
     group.add(memoryGroup);
     group.add(rightMemEnd);
 
-    group.add(gunGroup);
-
     group.add(programLabel);
+    group.add(programPointerMarker);
     group.add(leftProgramEnd);
     group.add(programGroup);
     group.add(rightProgramEnd);
@@ -1291,11 +1283,6 @@ function init() {
         labelSideTextMaterial.color.setStyle(value);
     });
 
-    var gunFolder = gui.addFolder("Gun");
-    gunFolder.addColor(settings.gun, 'colour').onChange(function(value){
-        gunMaterial.color.setStyle(value);
-    });
-
     var sceneFolder = gui.addFolder("Scene");
     var sceneRotationFolder = sceneFolder.addFolder("Rotation");
     sceneRotationFolder.add(settings.scene.rotation, 'y', -2 * Math.PI, 2 * Math.PI).listen().onChange(function(value){
@@ -1342,10 +1329,8 @@ function init() {
         memoryGroup.visible = value;
         rightMemEnd.visible = value;
     });
-    renderFolder.add(settings.render, 'gun').onChange(function(value){
-        gunGroup.visible = value;
-    });
     renderFolder.add(settings.render, 'program').onChange(function(value){
+        programPointerMarker.visible = value;
         leftProgramEnd.visible = value;
         programGroup.visible = value;
         rightProgramEnd.visible = value;
@@ -1416,7 +1401,6 @@ function setAllMaterialsNeedUpdate() {
     memBoxMaterial.needsUpdate = true;
     memFrontTextMaterial.needsUpdate = true;
     memSideTextMaterial.needsUpdate = true;
-    gunMaterial.needsUpdate = true;
     programBoxMaterial.needsUpdate = true;
     programFrontTextMaterial.needsUpdate = true;
     programSideTextMaterial.needsUpdate = true;
@@ -1432,7 +1416,7 @@ function createLabel(boxMaterial, textMaterial, text) {
     var geometry = new THREE.BoxGeometry( 250, 50, 10 );
     var labelBox = new THREE.Mesh( geometry, boxMaterial );
     labelBox.position.y = 25;
-    var labelText = createText( "labelText", text, textMaterial );
+    var labelText = createLabelText(text, textMaterial);
     labelText.position.y = 17;
 
     var labelGroup = new THREE.Group();
@@ -1464,24 +1448,40 @@ function createPlane(material) {
     return plane;
 }
 
+function createOutputText(outputChar) {
+    return createText("outputText", outputChar, outputTextMaterial, 25);
+}
+
+function createMemoryText(memoryValue) {
+    return createText("memoryText", memoryValue, memoryTextMaterial, 17);
+}
+
 function createCommandText(cmd) {
-    return createText("cmdText_" + cmd, cmd, getCommandMaterial(cmd));
+    return createText("cmdText_" + cmd, cmd, getCommandMaterial(cmd), 25);
 }
 
 function createProgramText(cmd) {
-    return createText("programText", cmd, getCommandMaterial(cmd));
+    return createText("programText", cmd, getCommandMaterial(cmd), 25);
+}
+
+function createInputText(inputChar) {
+    return createText("inputText", inputChar, inputTextMaterial, 25);
+}
+
+function createLabelText(text, textMaterial) {
+    return createText("labelText", text, textMaterial, 20);
 }
 
 function getCommandMaterial(cmd) {
     return cmdMaterial[cmd] || programTextMaterial;
 }
 
-function createText(name, text, material) {
+function createText(name, text, material, size) {
 
     var textGeo = new THREE.TextGeometry( text, {
 
-        size: 15,
-        height: 10,
+        size: size,
+        height: 20,
         curveSegments: 4,
         font: "helvetiker",
         weight: "bold",
@@ -1506,7 +1506,7 @@ function createText(name, text, material) {
     textMesh1.userData = { memValue: parseInt(text, 10) };
     textMesh1.position.x = centerOffset;
     textMesh1.position.y = 15;
-    textMesh1.position.z = -5;
+    textMesh1.position.z = -10;
 
     textMesh1.rotation.x = 0;
     textMesh1.rotation.y = Math.PI * 2;
@@ -1532,7 +1532,7 @@ function createEndCell(material) {
 
 function createGunBox(material) {
 
-    var geometry = new THREE.BoxGeometry( 30, 30, 30 );
+    var geometry = new THREE.BoxGeometry( 40, 40, 40 );
     var box = new THREE.Mesh( geometry, material );
     box.position.y = 25;
     return box;
@@ -1712,7 +1712,7 @@ function processCommand() {
 function fireCommandBullet(cmd, onCompleteCallback) {
     currentCommandText = commandTexts[cmd];
     currentCommandText.position.setY(60);
-    gunGroup.add(currentCommandText);
+    programPointerMarker.add(currentCommandText);
     animState.commandBulletPosition.y = 60;
     var bulletTween = new TWEEN.Tween( animState.commandBulletPosition )
         .to( { y: 175 }, ANIM_TIME )
@@ -1720,7 +1720,7 @@ function fireCommandBullet(cmd, onCompleteCallback) {
             currentCommandText.position.setY(this.y);
         } )
         .onComplete( function () {
-            gunGroup.remove(currentCommandText);
+            programPointerMarker.remove(currentCommandText);
             onCompleteCallback();
         })
         .start();
@@ -1779,7 +1779,7 @@ function animateMemoryToTheLeft() {
 
         var nextShownMemoryPointer = (memoryPointer + (settings.memory.numCells / 2) - 1) % memorySize;
         var nextShownMemoryValue = getMemoryValue(nextShownMemoryPointer);
-        var newMemoryText = createText( "memoryText", nextShownMemoryValue, memoryTextMaterial );
+        var newMemoryText = createMemoryText(nextShownMemoryValue);
         nextCell.remove(memoryText);
         nextCell.add(newMemoryText);
         nextCell.position.setX(animState.memory.rightMostCellPositionX);
@@ -1939,7 +1939,7 @@ function animateMemoryToTheRight() {
             nextShownMemoryPointer = memorySize - 1;
         }
         var nextShownMemoryValue = getMemoryValue(nextShownMemoryPointer);
-        var newMemoryText = createText("memoryText", nextShownMemoryValue, memoryTextMaterial);
+        var newMemoryText = createMemoryText(nextShownMemoryValue);
         nextCell.remove(memoryText);
         nextCell.add(newMemoryText);
         nextCell.position.setX(animState.memory.leftMostCellPositionX);
@@ -1960,7 +1960,7 @@ function updateCurrentMemoryCellText() {
     var memCellGroup = scene.getObjectByName("memoryCellGroup" + animState.memory.currentCellNum);
     var memText = memCellGroup.getObjectByName("memoryText");
 
-    var newMemText = createText("memoryText", memory[memoryPointer], memoryTextMaterial);
+    var newMemText = createMemoryText(memory[memoryPointer]);
     memCellGroup.remove(memText);
     memCellGroup.add(newMemText);
 }
@@ -1985,7 +1985,7 @@ function animateOutputToTheLeft() {
         var nextCell = scene.getObjectByName("outputCellGroup" + animState.output.rightMostCellNum);
         var outputText = nextCell.getObjectByName("outputText");
 
-        var newOutputText = createText( "outputText", "", outputTextMaterial );
+        var newOutputText = createOutputText("");
         nextCell.remove(outputText);
         nextCell.add(newOutputText);
         nextCell.position.setX(animState.output.rightMostCellPositionX);
@@ -2006,7 +2006,7 @@ function animateNewOutputValue() {
     var outputCellGroup = scene.getObjectByName("outputCellGroup" + animState.output.currentCellNum);
     var outputText = outputCellGroup.getObjectByName("outputText");
 
-    var newOutputText = createText( "outputText", output[output.length-1], outputTextMaterial );
+    var newOutputText = createOutputText(output[output.length-1]);
     outputCellGroup.remove(outputText);
     outputCellGroup.add(newOutputText);
 
@@ -2033,7 +2033,7 @@ function animateInputToTheLeft() {
         var nextShownInputPointer = animState.input.inputPointer + (settings.input.numCells / 2) - 1;
         var nextShownInputValue = nextShownInputPointer < input.length ? input[nextShownInputPointer] : "";
 
-        var newInputText = createText( "inputText", nextShownInputValue, inputTextMaterial );
+        var newInputText = createInputText(nextShownInputValue);
         nextCell.remove(inputText);
         nextCell.add(newInputText);
         nextCell.position.setX(animState.input.rightMostCellPositionX);
