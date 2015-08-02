@@ -103,6 +103,8 @@ var programBoxMaterial, programFrontTextMaterial, programSideTextMaterial, progr
 var outputBoxMaterial, outputFrontTextMaterial, outputSideTextMaterial, outputTextMaterial;
 var inputBoxMaterial, inputFrontTextMaterial, inputSideTextMaterial, inputTextMaterial;
 
+var cmdMaterial;
+
 var camera, cameraTarget, scene, renderer;
 
 var group, gunGroup, programGroup, memoryGroup, outputGroup, inputGroup;
@@ -138,13 +140,32 @@ var presetPrograms = [
     //    input: "ABC"
     //},
     {
+        name: "Add Two Numbers",
+        rawCode:
+"### Add Two Numbers ###\n\
+\n\
+,       Read character from Input and store it in Cell #0\n\
+>       Move pointer to Cell #1\n\
+,       Read character from Input and store it in Cell #1\n\
+[           Enter loop\n\
+    <       Move pointer to Cell #0\n\
+    +       Increment Cell #0\n\
+    >       Move pointer to Cell #1\n\
+    -       Decrement Cell #1\n\
+]           We exit the loop when the last cell is empty\n\
+<       Go back to Cell #0\n\
+------------------------------------------------ Subtract 48 (ie ASCII char code of '0')\n\
+.       Output Cell #0",
+        input: "12"
+    },
+    {
         name: "Copy",
         rawCode:
 "### Copy ###\n\
 \n\
-+[>,]       For all the ASCII characters in Input, put their ASCII code into Memory\n\
-<[<]>>      Adjust the Memory pointer to point to the first ASCII code in Memory\n\
-[.>]        For all the non-zero values in Memory, put their ASCII characters into Output",
++[>,]       Read all characters from Input and store in Memory\n\
+<[<]>>      Move pointer to Cell #0\n\
+[.>]        Output all non zero Memory values",
         input: "ECHO"
     },
     {
@@ -198,7 +219,14 @@ Pointer :   ^\n\
     },
     {
         name: "Reverse",
-        rawCode: ">,[>,]<[.<]",
+        rawCode:
+"### REVERSE ###\n\
+\n\
+>     Move pointer to Cell #1\n\
+,     Read first character from Input and store it in Cell #1\n\
+[>,]  Read all remaining characters from Input and store in Memory\n\
+<     Move pointer to the final non zero value\n\
+[.<]  Output all non zero Memory values from right to left",
         input: "DESREVER"
     },
     {
@@ -239,6 +267,27 @@ Pointer :   ^\n\
     {
         name: "Sort",
         rawCode: ">>,[>>,]<<[[-<+<]>[>[>>]<[.[-]<[[>>+<<-]<]>>]>]<<]",
+        input: "CAB"
+    },
+    {
+        name: "Sort2",
+        rawCode:
+"### Sort2 ###\n\
+\n\
+>       (start padding)\n\
+,[>,]   read input\n\
++       count=1\n\
+[           while count !=0\n\
+    <[-<]   decrement all inputs\n\
+    >[>]    go to an input that was just decremented to zero or padding\n\
+    >       point to next input or more padding\n\
+    [           if not padding\n\
+        <-      change the 0 to 255 so it doesn't stop the next decrement pass\n\
+        [>]<.   point to and print count\n\
+        >>      point to more padding\n\
+    ]\n\
+    <<+     increment count\n\
+]",
         input: "CAB"
     },
     {
@@ -287,7 +336,7 @@ var playerState = {
     isReset: true
 };
 
-var settingsOverlayElement, programElement, inputElement;
+var runConfigOverlayElement, programElement, inputElement;
 var editor;
 var infoOverlayElement, previousPageElement, nextPageElement;
 var resetElement, runToggleElement, stepElement;
@@ -381,7 +430,7 @@ function resetProgramCells() {
         var command = (cp < 0 || cp >= codeSize ? "" : code[cp]);
         programCellGroup = scene.getObjectByName("programCellGroup" + cellNum);
         var programText = programCellGroup.getObjectByName("programText");
-        var newProgramText = createText( "programText", command, programTextMaterial );
+        var newProgramText = createProgramText(command);
         programCellGroup.remove(programText);
         programCellGroup.add(newProgramText);
         programCellGroup.position.x = 55 * (cellNum - programCellOffset);
@@ -473,16 +522,16 @@ function stopAllAnimations() {
     TWEEN.removeAll();
 }
 
-function showSettings() {
+function showRunConfig() {
     editor.setValue(rawCode);
     editor.focus();
     inputElement.value = input;
-    settingsOverlayElement.style.display = 'block';
+    runConfigOverlayElement.style.display = 'block';
     editor.refresh();
 }
 
-function hideSettings() {
-    settingsOverlayElement.style.display = 'none';
+function hideRunConfig() {
+    runConfigOverlayElement.style.display = 'none';
 }
 
 function showInfo() {
@@ -541,10 +590,10 @@ function reset(newRawCode, newInput) {
     resetPlayerControls();
 }
 
-function applySettings() {
+function applyRunConfig() {
     reset(editor.getValue(), inputElement.value);
 
-    hideSettings();
+    hideRunConfig();
 
     nextCommand();
 }
@@ -672,16 +721,16 @@ function init() {
 
     // SETTINGS
 
-    var settingsElement = document.getElementById('settings');
-    settingsElement.addEventListener("click", showSettings);
+    var runConfigElement = document.getElementById('run_config');
+    runConfigElement.addEventListener("click", showRunConfig);
 
-    var settingsOkButton = document.getElementById('settings_ok');
-    settingsOkButton.addEventListener("click", applySettings);
+    var runConfigOkButton = document.getElementById('run_config_ok');
+    runConfigOkButton.addEventListener("click", applyRunConfig);
 
-    var settingsCancelButton = document.getElementById('settings_cancel');
-    settingsCancelButton.addEventListener("click", hideSettings);
+    var runConfigCancelButton = document.getElementById('run_config_cancel');
+    runConfigCancelButton.addEventListener("click", hideRunConfig);
 
-    settingsOverlayElement = document.getElementById('settings_overlay');
+    runConfigOverlayElement = document.getElementById('run_config_overlay');
     programElement = document.getElementById('program');
     inputElement = document.getElementById('input_values');
 
@@ -774,7 +823,44 @@ function init() {
         scene.add(ambientLight);
     }
 
-    // LABEL MATERIALS
+    // TEXT MATERIALS
+
+    memFrontTextMaterial = new THREE.MeshPhongMaterial( {
+        color: settings.memory.textColour, shading: THREE.FlatShading } );
+    memSideTextMaterial = new THREE.MeshPhongMaterial( {
+        color: settings.memory.textColour, shading: THREE.SmoothShading } );
+    memoryTextMaterial = new THREE.MeshFaceMaterial( [ memFrontTextMaterial, memSideTextMaterial ] );
+
+    outputFrontTextMaterial = new THREE.MeshPhongMaterial( {
+        color: settings.output.textColour, shading: THREE.FlatShading } );
+    outputSideTextMaterial = new THREE.MeshPhongMaterial( {
+        color: settings.output.textColour, shading: THREE.SmoothShading } );
+    outputTextMaterial = new THREE.MeshFaceMaterial( [ outputFrontTextMaterial, outputSideTextMaterial ] );
+
+    inputFrontTextMaterial = new THREE.MeshPhongMaterial( {
+        color: settings.input.textColour, shading: THREE.FlatShading } );
+    inputSideTextMaterial = new THREE.MeshPhongMaterial( {
+        color: settings.input.textColour, shading: THREE.SmoothShading } );
+    inputTextMaterial = new THREE.MeshFaceMaterial( [ inputFrontTextMaterial, inputSideTextMaterial ] );
+
+    programFrontTextMaterial = new THREE.MeshPhongMaterial( {
+        color: settings.program.textColour, shading: THREE.FlatShading } );
+    programSideTextMaterial = new THREE.MeshPhongMaterial( {
+        color: settings.program.textColour, shading: THREE.SmoothShading } );
+    programTextMaterial = new THREE.MeshFaceMaterial( [ programFrontTextMaterial, programSideTextMaterial ] );
+
+    cmdMaterial = {
+        '>' : memoryTextMaterial,
+        '<' : memoryTextMaterial,
+        '+' : memoryTextMaterial,
+        '-' : memoryTextMaterial,
+        '.' : outputTextMaterial,
+        ',' : inputTextMaterial,
+        '[' : programTextMaterial,
+        ']' : programTextMaterial
+    };
+
+    // LABEL TEXT MATERIALS
 
     var labelFrontTextMaterial = new THREE.MeshPhongMaterial( {
         color: settings.labels.textColour, shading: THREE.FlatShading } );
@@ -805,12 +891,6 @@ function init() {
     memoryPointerMarker.position.y = 350;
     
     // MEMORY
-
-    memFrontTextMaterial = new THREE.MeshPhongMaterial( {
-        color: settings.memory.textColour, shading: THREE.FlatShading } );
-    memSideTextMaterial = new THREE.MeshPhongMaterial( {
-        color: settings.memory.textColour, shading: THREE.SmoothShading } );
-    memoryTextMaterial = new THREE.MeshFaceMaterial( [ memFrontTextMaterial, memSideTextMaterial ] );
 
     memBoxMaterial = new THREE.MeshPhongMaterial( {
         color: settings.memory.cellColour, opacity: settings.memory.cellOpacity, transparent: true } );
@@ -860,12 +940,6 @@ function init() {
 
     // PROGRAM
 
-    programFrontTextMaterial = new THREE.MeshPhongMaterial( {
-        color: settings.program.textColour, shading: THREE.FlatShading } );
-    programSideTextMaterial = new THREE.MeshPhongMaterial( {
-        color: settings.program.textColour, shading: THREE.SmoothShading } );
-    programTextMaterial = new THREE.MeshFaceMaterial( [ programFrontTextMaterial, programSideTextMaterial ] );
-
     programBoxMaterial = new THREE.MeshPhongMaterial( {
         color: settings.program.cellColour, opacity: settings.program.cellOpacity, transparent: true } );
 
@@ -880,7 +954,7 @@ function init() {
         programCellGroup = new THREE.Group();
         programCellGroup.name = "programCellGroup" + cellNum;
         var command = (cp < 0 || cp >= codeSize ? "" : code[cp]);
-        programCellGroup.add( createText( "programText", command, programTextMaterial ) );
+        programCellGroup.add(createProgramText(command));
         programCellGroup.add( createBox( programBoxMaterial ) );
         programCellGroup.position.x = 55 * (cellNum - programCellOffset);
 
@@ -920,12 +994,6 @@ function init() {
     outputPointerMarker.position.y = 525;
 
     // OUTPUT
-
-    outputFrontTextMaterial = new THREE.MeshPhongMaterial( {
-        color: settings.output.textColour, shading: THREE.FlatShading } );
-    outputSideTextMaterial = new THREE.MeshPhongMaterial( {
-        color: settings.output.textColour, shading: THREE.SmoothShading } );
-    outputTextMaterial = new THREE.MeshFaceMaterial( [ outputFrontTextMaterial, outputSideTextMaterial ] );
 
     outputBoxMaterial = new THREE.MeshPhongMaterial( {
         color: settings.output.cellColour, opacity: settings.output.cellOpacity, transparent: true } );
@@ -976,12 +1044,6 @@ function init() {
     
     // INPUT
 
-    inputFrontTextMaterial = new THREE.MeshPhongMaterial( {
-        color: settings.input.textColour, shading: THREE.FlatShading } );
-    inputSideTextMaterial = new THREE.MeshPhongMaterial( {
-        color: settings.input.textColour, shading: THREE.SmoothShading } );
-    inputTextMaterial = new THREE.MeshFaceMaterial( [ inputFrontTextMaterial, inputSideTextMaterial ] );
-
     inputBoxMaterial = new THREE.MeshPhongMaterial( {
         color: settings.input.cellColour, opacity: settings.input.cellOpacity, transparent: true } );
 
@@ -1022,7 +1084,7 @@ function init() {
     var numCommands = commands.length;
     for (var i=0; i<numCommands; i++) {
         var cmd = commands[i];
-        var cmdText = createText( "cmdText_" + cmd, cmd, programTextMaterial );
+        var cmdText = createCommandText(cmd);
         cmdText.position.y = 60;
         commandTexts[cmd] = cmdText;
     }
@@ -1402,6 +1464,18 @@ function createPlane(material) {
     return plane;
 }
 
+function createCommandText(cmd) {
+    return createText("cmdText_" + cmd, cmd, getCommandMaterial(cmd));
+}
+
+function createProgramText(cmd) {
+    return createText("programText", cmd, getCommandMaterial(cmd));
+}
+
+function getCommandMaterial(cmd) {
+    return cmdMaterial[cmd] || programTextMaterial;
+}
+
 function createText(name, text, material) {
 
     var textGeo = new THREE.TextGeometry( text, {
@@ -1742,7 +1816,7 @@ function nextProgramCellLeft() {
         var nextShownProgramPointer = animState.program.codePointer + (settings.program.numCells / 2) - 1;
         var nextShownProgramValue = nextShownProgramPointer < codeSize ? code[nextShownProgramPointer] : "";
 
-        var newProgramText = createText("programText", nextShownProgramValue, programTextMaterial);
+        var newProgramText = createProgramText(nextShownProgramValue);
         nextCell.remove(programText);
         nextCell.add(newProgramText);
         nextCell.position.setX(animState.program.rightMostCellPositionX);
@@ -1804,7 +1878,7 @@ function nextProgramCellRight() {
         var nextShownProgramPointer = animState.program.codePointer - ((settings.program.numCells / 2) - 1);
         var nextShownProgramValue = nextShownProgramPointer >= 0 ? code[nextShownProgramPointer] : "";
 
-        var newProgramText = createText( "programText", nextShownProgramValue, programTextMaterial );
+        var newProgramText = createProgramText(nextShownProgramValue);
         nextCell.remove(programText);
         nextCell.add(newProgramText);
         nextCell.position.setX(animState.program.leftMostCellPositionX);

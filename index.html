@@ -17,14 +17,14 @@
 
         <div class="gui-container" id="gui_container"></div>
 
-        <div class="dialog-overlay" id="settings_overlay">
+        <div class="dialog-overlay" id="run_config_overlay">
             <div class="dialog-container">
-                <div class="dialog-heading">Settings</div>
-                <label class="settings-label" for="program">Program</label>
+                <div class="dialog-heading">Run Configuration</div>
+                <label class="run-config-label" for="program">Program</label>
                 <textarea id="program"></textarea>
-                <label class="settings-label" for="input_values">Input</label>
-                <input class="settings-input" type="text" id="input_values"/>
-                <button class="settings-button" id="settings_ok">OK</button><button class="settings-button" id="settings_cancel">Cancel</button>
+                <label class="run-config-label" for="input_values">Input</label>
+                <input class="run-config-input" type="text" id="input_values"/>
+                <button class="run-config-button" id="run_config_ok">OK</button><button class="run-config-button" id="run_config_cancel">Cancel</button>
             </div>
         </div>
 
@@ -72,6 +72,8 @@
             <select class="preset-program-select" id="preset_program"></select>
         </div>
 
+        <div class="toolbar-icon run-config overlay" id="run_config"></div>
+
         <div class="toolbar-icon reset overlay toolbar-icon-disabled" id="reset"></div>
         <div class="toolbar-icon run overlay" id="runToggle"></div>
         <div class="toolbar-icon step overlay" id="step"></div>
@@ -80,7 +82,7 @@
             <label for="speed_input">Speed: </label><span id="speed_display"></span><input class="slider" id="speed_input" type="range" min="1" max="11"/>
         </div>
 
-        <div class="toolbar-icon settings overlay" id="settings"></div>
+        <!--<div class="toolbar-icon settings overlay" id="settings"></div>-->
         <div class="toolbar-icon info overlay" id="info"></div>
 
         <script src="lib/three.min.js"></script>
