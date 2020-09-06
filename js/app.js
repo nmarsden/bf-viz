@@ -522,7 +522,7 @@ function showRunConfig() {
     editor.setValue(rawCode);
     editor.focus();
     inputElement.value = input;
-    runConfigOverlayElement.style.display = 'block';
+    runConfigOverlayElement.style.display = 'flex';
     editor.refresh();
 }
 
@@ -531,7 +531,7 @@ function hideRunConfig() {
 }
 
 function showInfo() {
-    infoOverlayElement.style.display = 'block';
+    infoOverlayElement.style.display = 'flex';
 }
 
 function hideInfo() {
