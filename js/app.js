@@ -1161,7 +1161,11 @@ function init() {
 
     // EVENTS
 
-    container.addEventListener( 'mousedown', onDocumentMouseDown, false );
+    var hammertime = new Hammer( container );
+    hammertime.on('panleft', onPanLeft );
+    hammertime.on('panright', onPanRight );
+    //container.addEventListener( 'mousedown', onDocumentMouseDown, false );
+
     window.addEventListener( 'resize', onWindowResize, false );
 
     // SETTINGS GUI
@@ -1572,6 +1576,16 @@ function onWindowResize() {
     camera.updateProjectionMatrix();
 
     renderer.setSize( window.innerWidth, window.innerHeight );
+}
+
+function onPanLeft( event ) {
+    targetRotation = targetRotation - ( event.distance ) * 0.001;
+    settings.scene.rotation.y = targetRotation;
+}
+
+function onPanRight( event ) {
+    targetRotation = targetRotation + ( event.distance ) * 0.001;
+    settings.scene.rotation.y = targetRotation;
 }
 
 function onDocumentMouseDown( event ) {
