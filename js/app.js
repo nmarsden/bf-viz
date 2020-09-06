@@ -1156,6 +1156,7 @@ function init() {
     stats = new Stats();
     stats.domElement.style.position = 'absolute';
     stats.domElement.style.top = '0px';
+    stats.domElement.style.display = 'none';
     container.appendChild( stats.domElement );
 
     // EVENTS
@@ -1165,12 +1166,27 @@ function init() {
 
     // SETTINGS GUI
 
-    var gui = new dat.GUI({ autoPlace: false });
+    var gui = new dat.GUI({ autoPlace: false, width: 200 });
     gui.close();
     var guiContainer = document.getElementById('gui_container');
     guiContainer.appendChild(gui.domElement);
 
+    // GUI: folders
+    var renderFolder = gui.addFolder("Render");
+    var cameraFolder = gui.addFolder("Camera");
     var fogFolder = gui.addFolder("Fog");
+    var ambientLightFolder = gui.addFolder("Ambient Light");
+    var dirLightFolder = gui.addFolder("Directional Light");
+    var pointLightFolder = gui.addFolder("Point Light");
+    var floorFolder = gui.addFolder("Floor");
+    var memFolder = gui.addFolder("Memory");
+    var programFolder = gui.addFolder("Program");
+    var outputFolder = gui.addFolder("Output");
+    var inputFolder = gui.addFolder("Input");
+    var labelsFolder = gui.addFolder("Labels");
+    var sceneFolder = gui.addFolder("Scene");
+
+    // GUI: Fog
     fogFolder.addColor(settings.fog, "colour").onChange(function(value){
         fog.color.setStyle(value);
         renderer.setClearColor( value );
@@ -1182,12 +1198,12 @@ function init() {
         fog.far = value;
     });
 
-    var ambientLightFolder = gui.addFolder("Ambient Light");
+    // GUI: Ambient Light
     ambientLightFolder.addColor(settings.ambientLight, "colour").onChange(function(value){
         ambientLight.color.setStyle(value);
     });
 
-    var dirLightFolder = gui.addFolder("Directional Light");
+    // GUI: Directional Light
     dirLightFolder.addColor(settings.directionalLight, "colour").onChange(function(value){
         dirLight.color.setStyle(value);
     });
@@ -1204,7 +1220,7 @@ function init() {
         dirLight.position.setZ(value);
     });
 
-    var pointLightFolder = gui.addFolder("Point Light");
+    // GUI: Point Light
     pointLightFolder.addColor(settings.pointLight, "colour").onChange(function(value){
         pointLight.color.setStyle(value);
     });
@@ -1224,12 +1240,12 @@ function init() {
         pointLight.position.setZ(value);
     });
 
-    var floorFolder = gui.addFolder("Floor");
+    // GUI: Floor
     floorFolder.addColor(settings.floor, "colour").onChange(function(value){
         floorMaterial.color.setStyle(value);
     });
 
-    var memFolder = gui.addFolder("Memory");
+    // GUI: Memory
     memFolder.addColor(settings.memory, 'cellColour').name("cell colour").onChange(function(value){
         memBoxMaterial.color.setStyle(value);
     });
@@ -1241,7 +1257,7 @@ function init() {
         memSideTextMaterial.color.setStyle(value);
     });
 
-    var programFolder = gui.addFolder("Program");
+    // GUI: Program
     programFolder.addColor(settings.program, 'cellColour').name("cell colour").onChange(function(value){
         programBoxMaterial.color.setStyle(value);
     });
@@ -1253,7 +1269,7 @@ function init() {
         programSideTextMaterial.color.setStyle(value);
     });
 
-    var outputFolder = gui.addFolder("Output");
+    // GUI: Output
     outputFolder.addColor(settings.output, 'cellColour').name("cell colour").onChange(function(value){
         outputBoxMaterial.color.setStyle(value);
     });
@@ -1265,7 +1281,7 @@ function init() {
         outputSideTextMaterial.color.setStyle(value);
     });
 
-    var inputFolder = gui.addFolder("Input");
+    // GUI: Input
     inputFolder.addColor(settings.input, 'cellColour').name("cell colour").onChange(function(value){
         inputBoxMaterial.color.setStyle(value);
     });
@@ -1277,19 +1293,19 @@ function init() {
         inputSideTextMaterial.color.setStyle(value);
     });
 
-    var labelsFolder = gui.addFolder("Labels");
+    // GUI: Labels
     labelsFolder.addColor(settings.labels, 'textColour').name("text colour").onChange(function(value){
         labelFrontTextMaterial.color.setStyle(value);
         labelSideTextMaterial.color.setStyle(value);
     });
 
-    var sceneFolder = gui.addFolder("Scene");
+    // GUI: Scene
     var sceneRotationFolder = sceneFolder.addFolder("Rotation");
     sceneRotationFolder.add(settings.scene.rotation, 'y', -2 * Math.PI, 2 * Math.PI).listen().onChange(function(value){
         targetRotation = value;
     });
 
-    var cameraFolder = gui.addFolder("Camera");
+    // GUI: Camera
     var cameraPositionFolder = cameraFolder.addFolder("Position");
     cameraPositionFolder.add(settings.camera.position, 'x', -1000, 1000).onChange(function(value){
         camera.position.setX(value);
@@ -1311,7 +1327,7 @@ function init() {
         cameraTarget.z = value;
     });
 
-    var renderFolder = gui.addFolder("Render");
+    // GUI: Render
     renderFolder.add(settings.render, 'fog').onChange(function(value){
         if (value) {
             scene.fog = fog;
