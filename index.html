@@ -11,9 +11,16 @@
     </head>
 	<body>
 
-        <div class="heading-container overlay">
-            <div class="heading">BRAINF**K VISUALIZER</div>
-            <div class="toolbar-icon info overlay" id="info"></div>
+
+        <div class="header-container overlay">
+            <div class="heading-container">
+                <div class="heading">BRAINF**K VISUALIZER</div>
+                <div class="toolbar-icon info" id="info"></div>
+            </div>
+            <div class="run-config-container">
+                <select class="preset-program-select" id="preset_program"></select>
+                <div class="toolbar-icon run-config" id="run_config"></div>
+            </div>
         </div>
 
         <div class="gui-container" id="gui_container"></div>
@@ -68,12 +75,6 @@
             <div class="current-command-heading">Current Command</div>
             <div class="current-command" id="current_command"></div>
         </div>
-
-        <div class="preset-program-container overlay">
-            <select class="preset-program-select" id="preset_program"></select>
-        </div>
-
-        <div class="toolbar-icon run-config overlay" id="run_config"></div>
 
         <div class="toolbar-icon reset overlay toolbar-icon-disabled" id="reset"></div>
         <div class="toolbar-icon run overlay" id="runToggle"></div>
