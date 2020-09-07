@@ -109,8 +109,7 @@ var inputLabel, programLabel, memoryLabel, outputLabel;
 var targetRotation = settings.scene.rotation.y;
 var targetRotationOnMouseDown = 0;
 
-var mouseX = 0;
-var mouseXOnMouseDown = 0;
+var mouseYOnMouseDown = 0;
 
 var windowHalfX = window.innerWidth / 2;
 var windowHalfY = window.innerHeight / 2;
@@ -345,6 +344,7 @@ var infoPageNum = 1;
 var MAX_INFO_PAGES = 1;
 
 init();
+zoomToFit();
 animate();
 
 function extractBFCommands(rawCode) {
@@ -1161,13 +1161,16 @@ function init() {
 
     // EVENTS
 
-    var hammertime = new Hammer( container );
-    hammertime.get('pinch').set({ enable: true });
-    hammertime.on('panleft', onPanLeft );
-    hammertime.on('panright', onPanRight );
-    hammertime.on('pinchin', onPinchIn );
-    hammertime.on('pinchout', onPinchOut );
-    //container.addEventListener( 'mousedown', onDocumentMouseDown, false );
+    let mc = new Hammer.Manager( container );
+    mc.add( new Hammer.Pan() );
+    mc.add( new Hammer.Pinch() );
+    mc.add( new Hammer.Tap({ event: 'doubletap', taps: 2 }) );
+    mc.on('panleft', onPanLeft );
+    mc.on('panright', onPanRight );
+    mc.on('pinchin', onPinchIn );
+    mc.on('pinchout', onPinchOut );
+    mc.on( 'doubletap', onDoubleTap );
+    container.addEventListener( 'mousedown', onDocumentMouseDown, false );
 
     window.addEventListener( 'resize', onWindowResize, false );
 
@@ -1581,6 +1584,47 @@ function onWindowResize() {
     renderer.setSize( window.innerWidth, window.innerHeight );
 }
 
+function zoomToFit( ) {
+    // Calc. bounding box for objects at the extremities
+    let outputLabelBoundingBox = new THREE.Box3();
+    outputLabelBoundingBox.setFromObject( outputLabel )
+
+    let inputGroupBoundingBox = new THREE.Box3();
+    inputGroupBoundingBox.setFromObject( inputGroup )
+
+    let boundingBox = new THREE.Box3();
+    boundingBox.union( outputLabelBoundingBox );
+    boundingBox.union( inputGroupBoundingBox );
+
+    // Calc. max object width using bounding sphere radius, since it can be rotated around the Y-axis
+    let maxObjectWidth = boundingBox.getBoundingSphere().radius * 2;
+
+    // Calc. max object height using bounding box height
+    let maxObjectHeight = boundingBox.size().y;
+
+    // Calc. cameraZ considering max width & height
+    const fitHeightDistance = maxObjectWidth / ( 2 * Math.atan( Math.PI * camera.fov / 360 ) );
+    const cameraZToFitMaxWidth = fitHeightDistance / camera.aspect;
+    const cameraZToFitMaxHeight = maxObjectHeight / ( 2 * Math.atan( Math.PI * camera.fov / 360 ) );
+    const cameraZ = Math.max( cameraZToFitMaxWidth, cameraZToFitMaxHeight );
+
+    // console.log( 'maxObjectWidth', maxObjectWidth );
+    // console.log( 'maxObjectHeight', maxObjectHeight );
+    // console.log( 'hFOV', camera.fov );
+    // console.log( 'aspect', camera.aspect );
+    // console.log( 'fitHeightDistance', fitHeightDistance );
+    // console.log( 'cameraZToFitMaxWidth', cameraZToFitMaxWidth );
+    // console.log( 'cameraZToFitMaxHeight', cameraZToFitMaxHeight );
+    // console.log( 'cameraZ', cameraZ );
+
+    settings.camera.position.z = cameraZ;
+    camera.position.setZ(settings.camera.position.z);
+}
+
+function onDoubleTap( event ) {
+    zoomToFit();
+}
+
 function onPanLeft( event ) {
     targetRotation = targetRotation - ( event.distance ) * 0.001;
     settings.scene.rotation.y = targetRotation;
@@ -1608,34 +1652,39 @@ function onPinchOut( event ) {
 }
 
 function onDocumentMouseDown( event ) {
+    // Middle mouse button down
+    if (event.button === 1) {
+        event.preventDefault();
 
-    event.preventDefault();
+        document.addEventListener( 'mousemove', onDocumentMouseMove, false );
+        document.addEventListener( 'mouseup', onDocumentMouseUp, false );
+        document.addEventListener( 'mouseout', onDocumentMouseOut, false );
 
-    document.addEventListener( 'mousemove', onDocumentMouseMove, false );
-    document.addEventListener( 'mouseup', onDocumentMouseUp, false );
-    document.addEventListener( 'mouseout', onDocumentMouseOut, false );
-
-    mouseXOnMouseDown = event.clientX - windowHalfX;
-    targetRotationOnMouseDown = targetRotation;
+        mouseYOnMouseDown = event.clientY - windowHalfY;
+    }
 }
 
 function onDocumentMouseMove( event ) {
+    // Mouse move while middle mouse button down
+    let mouseY = event.clientY - windowHalfY;
 
-    mouseX = event.clientX - windowHalfX;
-
-    targetRotation = targetRotationOnMouseDown + ( mouseX - mouseXOnMouseDown ) * 0.02;
-    settings.scene.rotation.y = targetRotation;
+    let mouseYDiff = mouseYOnMouseDown - mouseY;
+    if (mouseYDiff > 0) {
+        onPinchOut();
+    } else {
+        onPinchIn();
+    }
 }
 
 function onDocumentMouseUp( event ) {
-
-    document.removeEventListener( 'mousemove', onDocumentMouseMove, false );
-    document.removeEventListener( 'mouseup', onDocumentMouseUp, false );
-    document.removeEventListener( 'mouseout', onDocumentMouseOut, false );
+    // Middle mouse button up
+    document.removeEventListener('mousemove', onDocumentMouseMove, false);
+    document.removeEventListener('mouseup', onDocumentMouseUp, false);
+    document.removeEventListener('mouseout', onDocumentMouseOut, false);
 }
 
 function onDocumentMouseOut( event ) {
-
+    // Mouse move out while middle mouse button down
     document.removeEventListener( 'mousemove', onDocumentMouseMove, false );
     document.removeEventListener( 'mouseup', onDocumentMouseUp, false );
     document.removeEventListener( 'mouseout', onDocumentMouseOut, false );
