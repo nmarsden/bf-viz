@@ -20,7 +20,7 @@ var settings = {
         cellColour: "#ffffff",
         cellOpacity: 0.12,
         textColour: "#c07171"
-    },    
+    },
     output: {
         numCells: 24,
         cellColour: "#ffffff",
@@ -787,7 +787,7 @@ function init() {
 
     // CAMERA
 
-    camera = new THREE.PerspectiveCamera( 30, window.innerWidth / window.innerHeight, 1, 2500 );
+    camera = new THREE.PerspectiveCamera( 30, window.innerWidth / window.innerHeight, 1, 5500 );
     camera.position.set( settings.camera.position.x, settings.camera.position.y, settings.camera.position.z );
     cameraTarget = new THREE.Vector3( settings.camera.target.x, settings.camera.target.y, settings.camera.target.z );
 
@@ -879,13 +879,13 @@ function init() {
     memoryLabel = createLabel( memoryLabelMaterial, labelTextMaterial, "MEMORY" );
     memoryLabel.position.x = animState.memory.leftEndPositionX + 100;
     memoryLabel.position.y = 410;
-    
+
     // MEMORY POINTER
     var memoryPointerMaterial = new THREE.MeshPhongMaterial( {
         color: settings.memory.textColour } );
     var memoryPointerMarker = createPointer( memoryPointerMaterial );
     memoryPointerMarker.position.y = 350;
-    
+
     // MEMORY
 
     memBoxMaterial = new THREE.MeshPhongMaterial( {
@@ -1038,7 +1038,7 @@ function init() {
         color: settings.input.textColour } );
     var inputPointerMarker = createPointer( inputPointerMaterial );
     inputPointerMarker.position.y = 0;
-    
+
     // INPUT
 
     inputBoxMaterial = new THREE.MeshPhongMaterial( {
@@ -1162,8 +1162,11 @@ function init() {
     // EVENTS
 
     var hammertime = new Hammer( container );
+    hammertime.get('pinch').set({ enable: true });
     hammertime.on('panleft', onPanLeft );
     hammertime.on('panright', onPanRight );
+    hammertime.on('pinchin', onPinchIn );
+    hammertime.on('pinchout', onPinchOut );
     //container.addEventListener( 'mousedown', onDocumentMouseDown, false );
 
     window.addEventListener( 'resize', onWindowResize, false );
@@ -1586,6 +1589,22 @@ function onPanLeft( event ) {
 function onPanRight( event ) {
     targetRotation = targetRotation + ( event.distance ) * 0.001;
     settings.scene.rotation.y = targetRotation;
+}
+
+function onPinchIn( event ) {
+    // Zoom In
+    if (settings.camera.position.z > 520) {
+        settings.camera.position.z -= 20;
+        camera.position.setZ(settings.camera.position.z);
+    }
+}
+
+function onPinchOut( event ) {
+    // Zoom out
+    if (settings.camera.position.z < 4480) {
+        settings.camera.position.z += 20;
+        camera.position.setZ(settings.camera.position.z);
+    }
 }
 
 function onDocumentMouseDown( event ) {
